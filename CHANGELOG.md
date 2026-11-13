@@ -2,7 +2,7 @@
 
 Only the current version is kept here: each `vX.Y.Z` tag publishes the TV and Android APKs, and this section becomes the release notes.
 
-## Unreleased
+## 2.21.0
 
 ### ✨ New
 - **FMHYPlay is now AnantPlay.** Same app, same settings, favorites, history and downloads; it installs over FMHYPlay as an update.

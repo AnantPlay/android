@@ -30,12 +30,12 @@ warp/build.sh     # builds the WARP helper into jni/ with the NDK
 
 <h2 id="layout">Project layout</h2>
 <table><tr><th>Path</th><th>What is in it</th></tr>
-<tr><td><code>src/me/champdev/weblock/</code></td><td>The app (plain Java): <code>Home</code> (tabs), <code>WebActivity</code> (the browser), <code>PlayerActivity</code> (the player), <code>Sniffer</code> (stream detection), <code>Iptv*</code>, <code>Catalog</code>, <code>Sites</code>, <code>Warp</code>, <code>AdBlock</code></td></tr>
+<tr><td><code>src/me/champdev/weblock/</code></td><td>The app (plain Java): <code>Home</code> (tabs), <code>WebActivity</code> (the browser), <code>PlayerActivity</code> (the player), <code>Sniffer</code> (stream detection), <code>Iptv*</code>, <code>Catalog</code>, <code>Sources</code> (the sources you add) and <code>Sites</code>, <code>Warp</code>, <code>AdBlock</code></td></tr>
 <tr><td><code>assets/</code></td><td>Scripts injected into pages: <code>frame.js</code> (server, quality and episode finder, stream sniffing), <code>spatnav.js</code> (remote navigation), <code>roles.js</code>, <code>autosearch.js</code></td></tr>
 <tr><td><code>warp/</code></td><td>The Go helper: a userspace WireGuard client exposing a local HTTP proxy</td></tr>
 <tr><td><code>libs/</code></td><td>Media3, AndroidX WebKit and Guava as plain jars</td></tr>
 <tr><td><code>res/</code></td><td>Icons, drawables, theme</td></tr>
-<tr><td><code>scripts/fetch-assets.sh</code></td><td>Downloads the site lists and blocklist the app starts with (they are not stored in the repository)</td></tr>
+<tr><td><code>scripts/fetch-assets.sh</code></td><td>Downloads the ad blocklist the app starts with (it is not stored in the repository)</td></tr>
 <tr><td><code>.github/workflows/</code></td><td>CI and release workflows</td></tr></table>
 
 <h2 id="signing">Signing</h2>

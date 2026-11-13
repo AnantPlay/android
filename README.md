@@ -141,7 +141,7 @@ Download the APK for your device from [Releases](https://github.com/AnantPlay/an
 
 Allow installs from your file manager or browser, open the APK, done. On a TV, `adb install -r AnantPlay-TV-vX.Y.Z.apk` works over the network. Updates install over the old version because releases are signed with the same key. Check a download with `SHA256SUMS.txt` from the release.
 
-**Is it safe?** Yes. All of the code is in this repository, and every release APK is built from it by GitHub Actions. VirusTotal finds nothing: [scan of v2.20.1 for phones](https://www.virustotal.com/gui/file/894edb0ceb42657c3899cd4cb26bc1af1ecac9eb8fe07d5bde93e271e951040f/detection). To check any other file, search its SHA-256 from `SHA256SUMS.txt` on [virustotal.com](https://www.virustotal.com). Google Play Protect may still say *Harmful app blocked* without giving a reason; tap *Install anyway* (under *More details* on some phones).
+**Is it safe?** Yes. All of the code is in this repository, and every release APK is built from it by GitHub Actions. To check a file yourself, search its SHA-256 from `SHA256SUMS.txt` on [virustotal.com](https://www.virustotal.com) or upload it there. Google Play Protect may still say *Harmful app blocked* without giving a reason; tap *Install anyway* (under *More details* on some phones).
 
 Requires Android 8.0 (API 26) or newer, arm64 or 32-bit ARM.
 
@@ -150,7 +150,7 @@ Requires Android 8.0 (API 26) or newer, arm64 or 32-bit ARM.
 1. On the Fire TV: *Settings → My Fire TV → About*, press OK on the device name 7 times (developer options on).
 2. Install **Downloader** (by AFTVnews) from the Amazon Appstore.
 3. *Settings → My Fire TV → Developer options → Install unknown apps* → turn on **Downloader**.
-4. In Downloader, type the code **`9828006`** or `https://github.com/AnantPlay/android/releases/latest/download/AnantPlay-TV.apk`, then *Go → Install → Open*.
+4. In Downloader, type `https://github.com/AnantPlay/android/releases/latest/download/AnantPlay-TV.apk`, then *Go → Install → Open*.
 
 Fire OS 7 or newer (Fire TV Stick 4K and later). The app updates itself afterwards. That link always gets the newest TV APK (`AnantPlay-Android.apk` for phones).
 
@@ -169,8 +169,9 @@ The APKs appear in the project folder. Details, signing and the CI setup are in 
 
 1. The page loads in a WebView. A small script (`assets/frame.js`) runs in every frame, including cross-origin embeds.
 2. The WebView's requests are watched for HLS and DASH playlists; some sites hide them behind URLs without an extension, so downloads are also recognised by their first bytes.
-3. When a stream shows up, the page is paused and the stream goes to ExoPlayer with the same headers and cookies the page used.
-4. The same script reads the page's server and quality lists. The player's buttons send a click back to it, the page switches, and the new stream is handed over the same way.
+3. Which sites, channels and title links exist is not in the app: it reads them from the sources added in *Settings, Sources* (by default the list in [AnantPlay/index](https://github.com/AnantPlay/index)).
+4. When a stream shows up, the page is paused and the stream goes to ExoPlayer with the same headers and cookies the page used.
+5. The same script reads the page's server and quality lists. The player's buttons send a click back to it, the page switches, and the new stream is handed over the same way.
 
 ## Support
 
