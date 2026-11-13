@@ -1,0 +1,21 @@
+# secrets and per-machine files
+release.jks
+release.pass
+*.jks
+*.keystore
+local.properties
+.DS_Store
+.commandcode/
+
+# build output
+build/
+*.apk
+
+# downloaded at build time (scripts/fetch-assets.sh) and built by warp/build.sh
+assets/blocklist.txt
+assets/*.tmp
+jni/
+
+# private extras never go in the public repo
+private/
+.claude/

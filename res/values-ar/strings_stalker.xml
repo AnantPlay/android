@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="stalker_button">بوابة Stalker (MAC)</string>
+    <string name="stalker_title">بوابة Stalker</string>
+    <string name="stalker_msg">عنوان البوابة وعنوان MAC من مزوّد IPTV الخاص بك (تسجيل دخول جهاز MAG)</string>
+    <string name="stalker_portal_hint">البوابة، مثل http://example.com:8080/c/</string>
+    <string name="stalker_mac_hint">عنوان MAC، مثل 00:1A:79:12:34:56</string>
+    <string name="stalker_bad_mac">يتكوّن عنوان MAC من ستة أزواج، مثل 00:1A:79:12:34:56</string>
+    <string name="stalker_cant_sign_in">تعذّر تسجيل الدخول: تحقّق من عنوان البوابة وعنوان MAC</string>
+    <string name="stalker_no_link">لم تُعطِ البوابة رابطًا لهذه القناة. حاول مرة أخرى بعد قليل.</string>
+</resources>

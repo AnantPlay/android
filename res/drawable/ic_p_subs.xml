@@ -1,0 +1,8 @@
+<!-- "CC" (closed captions), drawn for AnantPlay: a rounded badge with the two letters cut out of it -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
+    <path android:fillColor="#FFFFFFFF" android:fillType="evenOdd"
+        android:pathData="M5,5 H19 A3,3 0 0 1 22,8 V16 A3,3 0 0 1 19,19 H5 A3,3 0 0 1 2,16 V8 A3,3 0 0 1 5,5 Z
+            M10.66,9.74 A3.2,3.2 0 1 0 10.66,14.26 L9.74,13.34 A1.9,1.9 0 1 1 9.74,10.66 Z
+            M17.86,9.74 A3.2,3.2 0 1 0 17.86,14.26 L16.94,13.34 A1.9,1.9 0 1 1 16.94,10.66 Z"/>
+</vector>

@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>User guide - AnantPlay</title>
+<meta name="description" content="How to install and use AnantPlay: the TV remote, touch controls, AnantPlayer, IPTV, WARP, ad blocking, your own playlists and Simkl.">
+<meta property="og:title" content="User guide - AnantPlay"><meta property="og:description" content="How to install and use AnantPlay: the TV remote, touch controls, AnantPlayer, IPTV, WARP, ad blocking, your own playlists and Simkl."><meta property="og:image" content="banner.png">
+<meta name="theme-color" content="#120e1a"><link rel="icon" href="icon.png"><link rel="stylesheet" href="style.css">
+</head><body>
+<header class="nav"><div class="in">
+<a class="brand" href="index.html"><img src="icon.png" alt=""><span>Anant<b>Play</b></span></a>
+<nav><a href="index.html">Overview</a><a href="guide.html" class="on">User guide</a><a href="build.html">Build</a><a href="https://github.com/AnantPlay/android">GitHub</a></nav>
+</div></header>
+
+<main><div class="layout">
+<aside class="toc"><a href="#install">Install</a><a href="#browse">Browse and play</a><a href="#favorites">Favorites and My list</a><a href="#addsite">Add your own site</a><a href="#remote">TV remote</a><a href="#touch">Phone and tablet</a><a href="#player">AnantPlayer</a><a href="#episodes">Episodes and skipping</a><a href="#cast">Cast to TV</a><a href="#subtitles">Subtitles</a><a href="#downloads">Downloads</a><a href="#simkl">Simkl</a><a href="#punchplay">PunchPlay</a><a href="#iptv">IPTV</a><a href="#addstream">Add a stream or playlist</a><a href="#sources">Sources</a><a href="#network">WARP and ad blocking</a><a href="#troubleshooting">Troubleshooting</a></aside>
+<article>
+<h1>User guide</h1>
+<p class="sub">Everything you need to use AnantPlay on a TV or a phone.</p>
+
+<h2 id="install">Install</h2>
+<p>Download the right file from the <a href="https://github.com/AnantPlay/android/releases/latest">latest release</a>.</p>
+<table><tr><th>File</th><th>Use it on</th></tr>
+<tr><td><code>AnantPlay-TV-vX.Y.Z.apk</code></td><td>Android TV, Google TV, Fire TV and boxes. It adds the launcher entry and banner.</td></tr>
+<tr><td><code>AnantPlay-Android-vX.Y.Z.apk</code></td><td>Phones and tablets.</td></tr></table>
+<p><b>Phone:</b> open the downloaded file and allow installs from your browser or file manager when asked.<br>
+<b>TV:</b> put the APK on a USB drive and open it with a file manager, or install over the network:</p>
+<pre><code>adb connect TV_IP_ADDRESS:5555
+adb install -r AnantPlay-TV-vX.Y.Z.apk</code></pre>
+<h3 id="firetv">Fire TV</h3>
+<p>Works on Fire TV sticks, cubes and TVs with Fire OS 7 or newer (the Fire TV Stick 4K and every model since 2019).</p>
+<ol>
+<li>On the Fire TV: <i>Settings, My Fire TV, About</i>, then press <kbd>OK</kbd> on the device name 7 times until it says you are a developer.</li>
+<li>Install <b>Downloader</b> (by AFTVnews) from the Amazon Appstore: search for "Downloader".</li>
+<li><i>Settings, My Fire TV, Developer options, Install unknown apps</i>: turn on <b>Downloader</b>.</li>
+<li>Open Downloader and type the code <kbd>9828006</kbd>, or this address, then <i>Go</i>:<br><code>https://github.com/AnantPlay/android/releases/latest/download/AnantPlay-TV.apk</code></li>
+<li><i>Install</i>, then <i>Open</i>. Downloader offers to delete the file afterwards; say yes.</li>
+</ol>
+<p>AnantPlay then updates itself from inside the app. To cast from your phone to the Fire TV, open AnantPlay on it once; the Fire TV shows up in the phone's Cast list as <i>Name - AnantPlay</i>.</p>
+<p>Updates install over the old version, because every release is signed with the same key. You can check a file against <code>SHA256SUMS.txt</code> on the release page.</p>
+<p><b>Is it safe?</b> Yes. All of the code is <a href="https://github.com/AnantPlay/android">on GitHub</a>, and every release APK is built from it by GitHub Actions. VirusTotal finds nothing: <a href="https://www.virustotal.com/gui/file/894edb0ceb42657c3899cd4cb26bc1af1ecac9eb8fe07d5bde93e271e951040f/detection">scan of v2.20.1 for phones</a>. To check any other file, search its SHA-256 from <code>SHA256SUMS.txt</code> on <a href="https://www.virustotal.com">virustotal.com</a>. Google Play Protect may still say <i>Harmful app blocked</i> without giving a reason; tap <i>Install anyway</i> (under <i>More details</i> on some phones).</p>
+<p><b>Updates from inside the app</b> (2.14.0 and later): when a newer release is out, Home shows one line with an <i>Install</i> button. AnantPlay downloads it from GitHub and Android asks you to confirm; the first time, allow AnantPlay to install unknown apps. <i>Settings, Check for updates</i> looks right away, and <i>Check automatically</i> turns the automatic check off; it looks every hour and at every boot, even with the app closed.</p>
+
+<h2 id="browse">Browse and play</h2>
+<p>The tabs are <b>Home</b>, <b>Movies</b>, <b>TV</b>, <b>Sports</b>, <b>Anime</b> and <b>IPTV</b>: on a rail down the left side on a TV (with Search on top, and WARP and Settings at the foot), along the bottom on a phone (Search, WARP and Settings are in the bar on top). They stay on every screen; pressing one from a title page or a list goes Home on that tab. On a phone, pull down at the top of a tab to load it again.</p>
+<p><b>Your country first:</b> Home opens with Movies and TV rows from your country, and the Movies and TV tabs open on your first language with a chip for each (India: Hindi, Tamil, Telugu...). The country comes from the mobile network or the time zone; <i>Settings, Your country</i> changes it or turns it off.</p>
+<ul>
+<li><b>Sites</b> are the streaming sites from the sources you added (<a href="#sources">Sources</a>), grouped by what they carry. Pick one to open it. With no source added, each tab shows an <i>Add sources</i> button instead.</li>
+<li><b>Catalog rows</b> show what is new and popular. Pick a title (its page has a <i>Trailer</i> button), then <i>Watch on</i> a site; a series starts at its first episode unless you pick another from the list (50 at a time, <i>Load more</i> for the rest): on sites your title-links source knows it opens the title's own page (or the episode you picked), on the others it searches for the name and opens the match. Anime titles list anime sites only, and the sites that open episodes directly come first.</li>
+<li><b>Continue watching</b> on Home brings back the last titles you opened.</li>
+<li>Hold <kbd>OK</kbd> (long-press on a phone) on a site for favorites and mirrors.</li>
+</ul>
+<p>When a site starts a video, AnantPlay takes it over and opens it in <b>AnantPlayer</b>. <kbd>Back</kbd> returns to the site, and the <b>AnantPlayer</b> button on the site's own player brings it back. Sites' "Join our Discord", "What's new" and donate pop-ups are closed for you.</p>
+
+<h2 id="favorites">Favorites and My list</h2>
+<p>Mark what you use most so it is one press away.</p>
+<table><tr><th>What</th><th>How to mark it</th><th>Where it shows up</th></tr>
+<tr><td>A <b>site</b></td><td>Hold <kbd>OK</kbd> (long-press on a phone) on the site, then <i>Add to favorites</i>. The same menu removes it.</td><td>The <b>Favorites</b> row on Home</td></tr>
+<tr><td>A <b>title</b> (movie or series)</td><td>Hold <kbd>OK</kbd> or long-press its poster. A message confirms <i>Added to My list</i>; do it again to remove it. On the title page you can also press <i>+ My list</i>.</td><td>The <b>My list</b> row on Home</td></tr>
+<tr><td>An <b>IPTV channel</b></td><td>Hold <kbd>OK</kbd> or press <kbd>Menu</kbd> on the channel's card, then <i>Add to favorites</i> (a star appears on its name).</td><td>The <b>Favorites</b> row on the IPTV tab</td></tr></table>
+<p><i>Settings, Your data</i> clears favorites, watch history, IPTV history and My list.</p>
+
+<h2 id="addsite">Add your own site</h2>
+<p>Any website can live in the app, even one that is in none of your sources.</p>
+<ol>
+<li>On <b>Home</b>, find the <b>Favorites</b> row and press the <b>+ Add a site</b> card.</li>
+<li>Type or paste the address (for example <code>example.com</code>; <code>https://</code> is added for you) and press <i>Add</i>.</li>
+<li>The site appears in Favorites. Open it like any other: AnantPlayer, ad blocking, the remote cursor and the Servers and Quality buttons all work on it.</li>
+</ol>
+<p>Hold <kbd>OK</kbd> on it to remove it from your favorites.</p>
+
+<h2 id="remote">TV remote</h2>
+<table><tr><th>Where</th><th>Key</th><th>What it does</th></tr>
+<tr><td rowspan="2">Menus</td><td>Arrows, <kbd>OK</kbd></td><td>Move and select. <kbd>Left</kbd> from a page reaches the rail; <kbd>OK</kbd> on a tab opens it with the focus on its first card. <kbd>Up</kbd> and <kbd>Down</kbd> stay inside the page, and coming back from a video returns to the card you left</td></tr>
+<tr><td><kbd>Menu</kbd></td><td>Same as holding <kbd>OK</kbd>: favorites, mirrors, remove</td></tr>
+<tr><td rowspan="2">Sites</td><td>Arrows</td><td>Move a round cursor over the page (or the focus, in focus mode)</td></tr>
+<tr><td>Hold <kbd>OK</kbd> 5 s</td><td>Switch between cursor and focus mode for that site</td></tr>
+<tr><td rowspan="5">Player</td><td><kbd>Left</kbd> <kbd>Right</kbd></td><td>Seek 10 s; hold to go faster (30 s, then 60 s)</td></tr>
+<tr><td><kbd>OK</kbd> / Play</td><td>Pause and play; when <i>Skip intro</i> or <i>Next episode</i> shows, it presses that</td></tr>
+<tr><td><kbd>Up</kbd></td><td>Show the controls</td></tr>
+<tr><td><kbd>Down</kbd> / <kbd>Menu</kbd></td><td>Move to the buttons; the one the remote is on shows its name above it</td></tr>
+<tr><td><kbd>Back</kbd></td><td>Close the player and return to the site</td></tr>
+<tr><td>Anywhere</td><td>Hold <kbd>Back</kbd> 3 s</td><td>Go straight to Home ("Going to Home…"), closing everything open</td></tr></table>
+<p>Seeking waits until you stop pressing, then jumps once, so holding the key does not make the stream reload on every step.</p>
+
+<h2 id="touch">Phone and tablet</h2>
+<table><tr><th>Gesture</th><th>What it does</th></tr>
+<tr><td>Tap the video</td><td>Show or hide the controls</td></tr>
+<tr><td>Double-tap the left or right third</td><td>Back or forward 10 seconds</td></tr>
+<tr><td>Double-tap the middle</td><td>Pause and play</td></tr>
+<tr><td>Hold the right half</td><td>Play at 2x until you let go</td></tr>
+<tr><td>Hold the left half</td><td>Go back at 2x until you let go</td></tr>
+<tr><td>Swipe up or down on the left half</td><td>Brightness</td></tr>
+<tr><td>Swipe up or down on the right half</td><td>Volume</td></tr>
+<tr><td>Drag the progress bar</td><td>Seek (it jumps once, when you let go)</td></tr></table>
+<p>The player follows the rotation lock (the Full screen button turns it), and it keeps clear of camera cut-outs. <b>Picture in picture:</b> press Home while a video plays and it keeps playing in a small window, with play and pause; tap it for full screen, close it to stop.</p>
+<p><b>Back to Home in one step:</b> on a phone the player has a house button at the top right, and the same house sits at the top right of a website. On a TV open <i>More</i> in the player, or press <kbd>Menu</kbd> on a website, and pick <i>Home</i>. Everything open closes, and your place in the video is saved. While the app loads a page, searches for the title, opens the episode or starts the video, a translucent screen with the title, the current step and a cat covers the site; tap it (or press <kbd>Back</kbd>) to see the page, and it closes by itself if a step gets stuck.</p>
+
+<h2 id="player">AnantPlayer</h2>
+<p>One row of buttons at the bottom; the line under the title says what is playing and what is picked (for example <i>Season 2 · Episode 3 · 1080p · English · Dub</i>). A button only shows when it has something to offer.</p>
+<table><tr><th>Button</th><th>What it does</th></tr>
+<tr><td>Previous, Next</td><td>The episode before or after this one (series and anime).</td></tr>
+<tr><td>Quality</td><td>The qualities the stream offers (with frame rate, for example <code>1080p60</code>), or the site's own quality list for sites that serve one playlist per quality.</td></tr>
+<tr><td>Audio</td><td>The stream's audio tracks by language. The language you pick is remembered: the next videos start in it when they have it, otherwise in your device's language.</td></tr>
+<tr><td>SUB / DUB</td><td>Anime: switches between subtitled and dubbed in one press. The badge says which is playing, and each site remembers your pick.</td></tr>
+<tr><td>Episodes</td><td>A strip of episodes along the bottom, each with its picture and name, while the video keeps playing. The one playing is marked; pick another and it opens. For a live channel the same button is <i>Channels</i> (the channel's category in its country), for a movie <i>More to watch</i>. <kbd>Down</kbd> from the buttons opens it too; the button again, <kbd>Back</kbd> or a tap outside closes it.</td></tr>
+<tr><td>Servers</td><td>The site's own servers (see below).</td></tr>
+<tr><td>Subtitles</td><td>The stream's subtitles, <i>Search subtitles</i>, and <i>Settings</i> (size, position, color, background, timing).</td></tr>
+<tr><td>Download</td><td>Saves the movie, series or anime you are watching (see <a href="#downloads">Downloads</a>).</td></tr>
+<tr><td>More</td><td>Speed (0.5x to 2x), Sound boost (Volume boost and Dialog boost, each from 0 to 20, off at 0), Downloads, Zoom (Fit, Fill, Stretch, 16:9, 4:3), Debug overlay and From the start. <i>Debug overlay</i> shows live numbers over the picture: size and frame rate, codec and whether the decoder is hardware or software, video and audio bitrate, network speed (last download, estimate, 30-second average, total), buffer, dropped frames, stream type and host, how long the video took to open, and memory. It stays on or off as you leave it.</td></tr>
+<tr><td>Cast, Full screen</td><td>Send the video to a TV (phone), and turn the phone.</td></tr></table>
+<div class="note">For live channels the −10 and +10 buttons and the progress bar are hidden, since there is nothing to seek in.</div>
+
+<h2 id="episodes">Episodes, skipping and servers</h2>
+<p><b>Episodes:</b> pick a series or anime episode from the catalog, or from the player's <b>Episodes</b>, <b>Previous</b> and <b>Next</b>. On sites whose episode addresses AnantPlay knows (34 TV and 22 anime sites) the episode opens directly; on the others AnantPlay opens the show's page and presses the episode in the site's own list, also when it sits behind the player's Episodes and Season menus. The new stream opens in AnantPlayer by itself.</p>
+<p><b>Skip intro, recap and credits:</b> during an intro or a "Previously on" a <i>Skip intro</i> button shows over the picture; tap it or press <kbd>OK</kbd>. At the credits it becomes <i>Next episode</i>; only your press moves on before the video ends. <i>Settings, Skip intros</i> skips intros and recaps without asking. The times come from TheIntroDB and AniSkip, so they are there for most popular shows, anime and many movies.</p>
+<p><b>Servers</b> lists the site's own servers (the buttons named Server, Source or Mirror, including ones behind a menu). Choose one: the player closes, AnantPlay presses it on the site, and the new stream opens by itself.</p>
+
+<h2 id="cast">Cast to TV</h2>
+<p>Play something on the phone, tap the screen, then tap <b>Cast</b> (the first button in the player) and pick a TV. The TV carries on from the same spot, and the phone becomes the remote: play and pause, the seek bar, −10 s and +10 s, and the TV's volume (the phone's volume keys work too). <b>Stop casting</b> brings the video back to the phone where the TV was. <b>Re-scan</b>, at the end of the list, looks for TVs again.</p>
+<img class="shot" src="cast.svg" alt="Cast from the phone to a TV on the same Wi-Fi">
+<table><tr><th>In the list</th><th>What happens</th></tr>
+<tr><td>Bedroom - AnantPlay (Recommended)</td><td>AnantPlay on the TV plays the stream itself, with the site's headers and cookie, WARP, ad blocking and subtitles.</td></tr>
+<tr><td>Bedroom - Chromecast</td><td>Any Chromecast, Google TV or TV with Cast built in, without AnantPlay on it. The phone relays the stream, so keep it on and on the same Wi-Fi.</td></tr>
+<tr><td>Living room - DLNA</td><td>Smart TVs with DLNA / UPnP (Samsung, LG, Sony, Kodi and others), also through the phone. Not every TV plays HLS streams; MP4 and TS streams work on most.</td></tr></table>
+<p><b>Setting up the TV for AnantPlay casts:</b> install the TV app and open it once. Then on the TV, open <b>Settings, Cast to this TV</b> and allow <i>Display over other apps</i>: after that a cast opens the player even when AnantPlay is closed.</p>
+<div class="note">TCL and some other TVs do not let apps start by themselves after the TV restarts. On those, open AnantPlay once after a restart and the TV shows up on the phone again.</div>
+
+<h2 id="subtitles">Subtitles</h2>
+<p>Open <b>Subtitles</b>, choose <i>Search subtitles</i>, then a language (the one you picked last, your device's and English are on top, then every language by name) and a file. AnantPlay downloads the file, converts it so every script shows right (Arabic, Hindi, Chinese and the rest), and playback continues from the same spot. Search needs to know which title is playing: it comes from the catalog when you started from there, otherwise from the page's title and address.</p>
+<p><b>Auto-sync:</b> a file made for another release is often off, sometimes by minutes (a release with a recap). AnantPlay listens to the speech for a minute or two and lines the file up by itself; a message says when it did. Change the timing yourself and it leaves it alone.</p>
+<p>The last entry in <b>Subtitles</b>, <i>Settings</i>, opens a panel with − and + buttons:</p>
+<ul>
+<li><b>Size</b> and <b>Position</b> (+ moves them up, for TVs that show them too low or too high). Both are remembered, and <i>Settings, Subtitles</i> changes them too.</li>
+<li><b>Color</b> and <b>Background</b>.</li>
+<li><b>Timing</b>: + shows subtitles later, − earlier, 0.1 s a press. It applies to the video you are watching.</li>
+<li><i>Reset</i> puts them back.</li>
+</ul>
+
+<h2 id="downloads">Downloads</h2>
+<p>While a movie, series or anime plays, press <b>Download</b> (the arrow pointing down, next to More). AnantPlay looks at the stream and asks first: it shows the file name and the full path of the folder, and the pencil next to each one changes it. Downloads keep going when you leave the app, with the progress in a notification.</p>
+<ul>
+<li><b>File names</b> read like <code>Crawlers.2024.1080p.AnantPlay.mp4</code>: the title and year (or <code>S01E02</code> and the episode name for a series), the quality, and the app's mark, with dots between the parts.</li>
+<li><b>Several connections</b> at once, 4 by default: a plain file is fetched in parts, an HLS stream a few pieces at a time. Change it in <i>Settings, Downloads, Connections</i> (1 to 8).</li>
+<li><b>Folder:</b> <i>Download/AnantPlay</i>, or another one under Download, Movies or Documents in <i>Settings, Downloads, Folder</i>.</li>
+<li>The <b>Downloads</b> screen (<i>More, Downloads</i>, or <i>Settings, Downloads</i>) lists them with the file's path and a pause, play and bin button each; a tick marks a finished one. A paused download carries on from where it stopped.</li>
+<li>HLS streams are saved as <code>.ts</code>, or as <code>.mp4</code> with a seek index, so the video can be skipped through. A stream that keeps its sound in a separate playlist is saved as an <code>.mp4</code> with the sound joined in (it takes a moment at the end). DASH streams, live streams and protected streams cannot be downloaded.</li>
+</ul>
+
+<h2 id="simkl">Simkl</h2>
+<p><a href="https://simkl.com">Simkl</a> is a free watch tracker. Connect it once and the movies and episodes you watch are marked watched there.</p>
+<ol>
+<li>Open <i>Settings, Simkl</i> and press <i>Connect</i>. A code appears.</li>
+<li>On your phone or computer open <code>simkl.com/pin</code>, sign in (or make a free account) and enter the code.</li>
+<li>The TV says <i>Connected</i> by itself.</li>
+</ol>
+<p>Only titles opened from Movies, TV or Anime count, since they carry the title's IMDb id. A title is marked watched once you pass 80% in AnantPlayer. Press <i>Settings, Simkl</i> again to disconnect.</p>
+
+<h2 id="punchplay">PunchPlay</h2>
+<p><a href="https://punchplay.tv">PunchPlay</a> is another free tracker, and works the same way. You can connect both.</p>
+<ol>
+<li>Open <i>Settings, PunchPlay</i> and press <i>Connect</i>. A code appears.</li>
+<li>Open <code>punchplay.tv/link</code>, sign in (or make a free account) and enter the code.</li>
+<li>The app says <i>Connected</i> by itself.</li>
+</ol>
+<p>PunchPlay sees when you start, pause and stop a movie or episode opened from Movies, TV or Anime, and marks it watched past 80%. Press <i>Settings, PunchPlay</i> again to disconnect. What is sent is listed on the <a href="privacy.html">privacy page</a>.</p>
+
+<h2 id="iptv">IPTV</h2>
+<p>The <b>IPTV</b> tab starts with what you watched and your favorites, then your own playlists and pins, then your country's channels with its categories (News, Movies, Kids...), then every country and every category. In the player, <i>Previous</i> / <i>Next</i> and the remote's <kbd>Channel +</kbd> / <kbd>Channel −</kbd> move through the channel's category.</p>
+<ul>
+<li><b>Continue watching</b>: the last channels you watched. Hold <kbd>OK</kbd> on a card to remove it or star it. <b>Working channels</b> (every channel that has played or passed the check) is the first card under Categories.</li>
+<li><b>Offline channels are hidden.</b> A background check tests channels a few at a time and remembers the result (working for a week, not working for two days). A channel that fails when you press play is hidden at once. <i>Settings, Hide offline channels</i> turns this off and <i>Check channels now</i> tests everything again.</li>
+<li><b>Search</b> by typing or by voice, and filter inside any list by name.</li>
+<li><b>Category and Language chips</b> above every channel list: in <i>India</i>, for example, pick <i>News</i> and <i>Hindi</i>. Categories start with Movies, TV, Kids and News; languages with the one you use for audio, the country's main one and English.</li>
+<li><b>Pins</b>: the pin button next to the microphone keeps a list with its chips (<i>India · News · Hindi</i>) as its own row on the IPTV tab, near the top. Press it again in that list to unpin.</li>
+<li><b>Your playlists</b> come first: each one you added has its own row under the name you gave it, and single stream links share a <b>My streams</b> row (see below).</li>
+<li><b>+ Playlist</b> (top right) adds your own playlist or a single stream link.</li>
+</ul>
+
+<h2 id="addstream">Add a stream or playlist</h2>
+<p>Press <b>+ Playlist</b> on the IPTV tab (or <i>Settings, Add a playlist or stream</i>), paste a link and press <i>Add</i>. Give it a name: that is its row on the IPTV tab. Two kinds of link work:</p>
+<table><tr><th>You paste</th><th>You get</th></tr>
+<tr><td>A <b>playlist</b>: an M3U file that lists channels (<code>#EXTINF</code> lines)</td><td>Every channel in it, with its name, logo and group, in its own row at the top of the IPTV tab</td></tr>
+<tr><td>A single <b>stream</b>: an <code>.m3u8</code> (HLS) link, for example a camera, a live feed or a channel your provider gave you</td><td>One channel in <b>My streams</b>, under the name you gave it or named after the address (for example <code>cdn.example.com · news</code>). It plays in AnantPlayer like any other.</td></tr></table>
+<ul>
+<li><b>Xtream Codes</b>: if your provider gave you a server, username and password instead of a link, press <i>Xtream login</i> in the same dialog. The provider's live channels show in their categories. The background channel check never tests them, so the account's connection limit is not used up.</li>
+<li><b>Stalker portal (MAC)</b>: if your provider gave you a portal address (often ending in <code>/c/</code>) and a MAC address for a MAG box, press <i>Stalker portal (MAC)</i> in the same dialog and enter both. The channels get their own row; each one asks the portal for a fresh link when you play it, and the background check never tests them.</li>
+<li>Links on your own network (a PC, a NAS, a media server) work too; they never go through WARP.</li>
+<li>Playlists are downloaded again every 12 hours and when you press <i>Settings, Refresh IPTV channels</i>. A single stream is kept as it is.</li>
+<li>Hold <kbd>OK</kbd> on a card in your playlists to star it. Remove a whole playlist in <i>Settings</i>: each one has its own row (press it, then <i>Remove</i>).</li>
+<li>If it says <i>Not a playlist or stream link</i>, open the link in a browser first: it should start with <code>#EXTM3U</code>.</li>
+</ul>
+
+<h2 id="sources">Sources</h2>
+<p>AnantPlay comes with no sites, channels or title links of its own. They come from <b>sources</b> you add in <i>Settings, Sources</i>:</p>
+<ol>
+<li>Open <i>Settings, Sources</i>. The <b>AnantPlay index</b> is listed there; press <i>Add this index</i>.</li>
+<li>Its sources appear below it, each with an <b>Add</b> button: streaming sites, channel playlists, title links. Add the ones you want; they download at once and refresh every 12 hours (<i>Settings, Sites, Refresh sources</i> does it now).</li>
+<li>Press a source again to remove it. 18+ sources are listed only after <i>Settings, IPTV, 18+</i> is switched on.</li>
+</ol>
+<p><b>Your own index:</b> <i>Add an index by link</i> takes a link to an <code>index.json</code> you host anywhere (a repository, a gist, your own server). The format is described in <a href="https://github.com/AnantPlay/index">AnantPlay/index</a>; an older <code>sources.txt</code> list (<code>label|url</code>, <code>@deeplinks|url</code>) works too.</p>
+<p>Updating from FMHYPlay 2.20.1 or older adds the index and the sources you had for you, once.</p>
+
+<h2 id="network">WARP and ad blocking</h2>
+<p><b>WARP</b> (Settings, Connection) is a Cloudflare tunnel that carries only this app's traffic, with no VPN permission. It helps with networks that block sites or DNS. Addresses on your own network are never sent through it. Turn it off if a network does not allow it.</p>
+<p><b>If WARP says it cannot connect</b> (<i>Settings, WARP log</i> shows why): the first start signs up for a free WARP account with Cloudflare. AnantPlay looks for Cloudflare's address in several places at once and tries three times. If your network blocks DNS, open <i>Settings, WARP DNS</i> and type your internet provider's DNS addresses (they are on your router's status page); they are asked first. If the log says <i>HTTP 429</i>, Cloudflare is limiting sign-ups from your network: try again later or on another connection. WARP is optional: the app works without it, only blocked sites need it.</p>
+<p><b>Ad block</b> blocks ad and tracker domains, pop-ups and redirects on every site, using a domain list that refreshes weekly. If a site breaks, turn it off for a moment in Settings.</p>
+
+<h2 id="troubleshooting">Troubleshooting</h2>
+<table><tr><th>Problem</th><th>Try</th></tr>
+<tr><td>Play Protect says "Harmful app blocked"</td><td>Google gives no reason, and <a href="https://www.virustotal.com/gui/file/894edb0ceb42657c3899cd4cb26bc1af1ecac9eb8fe07d5bde93e271e951040f/detection">VirusTotal finds nothing</a>. Tap <i>Install anyway</i> (under <i>More details</i> on some phones). See <a href="#install">Is it safe?</a></td></tr>
+<tr><td>A site does not open</td><td>Turn WARP on, or try a mirror (hold <kbd>OK</kbd> on the site).</td></tr>
+<tr><td>The player does not start</td><td>Press Play on the page first. Some sites start the stream only after a click. Then use the <b>AnantPlayer</b> button on the site's player.</td></tr>
+<tr><td>"AnantPlayer could not play this"</td><td>It goes back to the page, which still plays the video itself. Try another server from the page.</td></tr>
+<tr><td>No Servers button</td><td>It appears only when the site's own buttons were found. Use the page's own controls for that site.</td></tr>
+<tr><td>Picture looks zoomed after a quality change</td><td>Seen only on the Android emulator's software decoder; AnantPlay restarts the decoder there. On a device, set Zoom back to Fit.</td></tr>
+<tr><td>IPTV channels disappear</td><td>They failed the check. Turn off <i>Hide offline channels</i>, or run <i>Check channels now</i> later.</td></tr></table>
+</article>
+</div></main>
+<footer>MIT licensed. AnantPlay does not host or distribute any media and is not affiliated with Cloudflare, Stremio, OpenSubtitles, the maintainers of any source, or any streaming site.<br>
+<a href="https://github.com/AnantPlay/android">Source</a> · <a href="https://github.com/AnantPlay/android/releases/latest">Releases</a> · <a href="https://github.com/AnantPlay/android/blob/main/THIRD_PARTY.md">Third-party notices</a></footer>
+</body></html>

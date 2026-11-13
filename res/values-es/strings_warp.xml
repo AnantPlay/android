@@ -1,0 +1,8 @@
+<resources>
+    <string name="warp_dns_title">DNS de WARP</string>
+    <string name="warp_dns_help">Qué DNS usa WARP para la dirección de Cloudflare. Automático funciona en casi todas las redes; si WARP no conecta, escribe el DNS de tu proveedor de internet.</string>
+    <string name="warp_dns_hint">Direcciones DNS separadas por comas, por ejemplo 87.101.204.72</string>
+    <string name="warp_dns_auto">Automático</string>
+    <string name="warp_dns_save">Guardar</string>
+    <string name="warp_dns_msg">Dónde busca WARP a Cloudflare. Las direcciones DNS de tu proveedor están en la página de estado del router. Déjalo vacío para Automático (el DNS de tu red más DNS públicos).</string>
+</resources>

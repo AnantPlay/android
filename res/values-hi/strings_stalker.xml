@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="stalker_button">Stalker पोर्टल (MAC)</string>
+    <string name="stalker_title">Stalker पोर्टल</string>
+    <string name="stalker_msg">आपके IPTV प्रोवाइडर से मिला पोर्टल पता और MAC पता (MAG बॉक्स लॉगिन)</string>
+    <string name="stalker_portal_hint">पोर्टल, जैसे http://example.com:8080/c/</string>
+    <string name="stalker_mac_hint">MAC पता, जैसे 00:1A:79:12:34:56</string>
+    <string name="stalker_bad_mac">MAC पते में छह जोड़े होते हैं, जैसे 00:1A:79:12:34:56</string>
+    <string name="stalker_cant_sign_in">साइन इन नहीं हो सका: पोर्टल पता और MAC पता जाँचें</string>
+    <string name="stalker_no_link">पोर्टल ने इस चैनल का लिंक नहीं दिया। थोड़ी देर में फिर कोशिश करें।</string>
+</resources>

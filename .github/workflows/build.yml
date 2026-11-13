@@ -1,0 +1,63 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: warp/go.mod
+          cache-dependency-path: warp/go.sum
+
+      # The runner already has an Android SDK; make sure the pieces build.sh uses are there
+      - name: Android SDK
+        run: |
+          SDKM="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKM" --licenses > /dev/null || true
+          "$SDKM" "platforms;android-34" "build-tools;35.0.0" > /dev/null
+
+      - name: Build the WARP helper
+        run: warp/build.sh
+
+      # With the key stored as secrets the APKs are signed with the project key; without them (forks, pull requests)
+      # build.sh makes a throw-away key, fine for checking that it builds
+      - name: Signing key
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
+          KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASS }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > release.jks
+            printf %s "$KEYSTORE_PASS" > release.pass
+          fi
+
+      - name: Build
+        run: ./build.sh
+
+      - name: Check the APKs
+        run: |
+          for f in AnantPlay-*.apk; do
+            "$ANDROID_HOME"/build-tools/35.0.0/apksigner verify --print-certs "$f" | grep -E "Signer #1 certificate (DN|SHA-256)"
+          done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apks
+          path: AnantPlay-*.apk
+          if-no-files-found: error

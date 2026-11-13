@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Build from source - AnantPlay</title>
+<meta name="description" content="Build AnantPlay with plain Android SDK tools, set up signing, and publish releases from GitHub Actions.">
+<meta property="og:title" content="Build from source - AnantPlay"><meta property="og:description" content="Build AnantPlay with plain Android SDK tools, set up signing, and publish releases from GitHub Actions."><meta property="og:image" content="banner.png">
+<meta name="theme-color" content="#120e1a"><link rel="icon" href="icon.png"><link rel="stylesheet" href="style.css">
+</head><body>
+<header class="nav"><div class="in">
+<a class="brand" href="index.html"><img src="icon.png" alt=""><span>Anant<b>Play</b></span></a>
+<nav><a href="index.html">Overview</a><a href="guide.html">User guide</a><a href="build.html" class="on">Build</a><a href="https://github.com/AnantPlay/android">GitHub</a></nav>
+</div></header>
+
+<main><div class="layout">
+<aside class="toc"><a href="#requirements">Requirements</a><a href="#build">Build</a><a href="#layout">Project layout</a><a href="#signing">Signing</a><a href="#ci">GitHub Actions</a><a href="#release">Publish a release</a><a href="#emulator">Emulator testing</a></aside>
+<article>
+<h1>Build from source</h1>
+<p class="sub">No Gradle, no IDE: shell scripts and the SDK's command-line tools.</p>
+
+<h2 id="requirements">Requirements</h2>
+<ul><li>Android SDK with <b>platform 34</b> and any <b>build-tools</b> (set <code>ANDROID_HOME</code>, or use <code>~/Library/Android/sdk</code>)</li>
+<li>JDK 17 or newer</li><li>Go (version in <code>warp/go.mod</code>) and the <b>Android NDK</b> (any recent one, from the SDK manager or <code>ANDROID_NDK_HOME</code>) for the WARP helper</li><li><code>curl</code>, <code>zip</code>, <code>openssl</code></li></ul>
+
+<h2 id="build">Build</h2>
+<pre><code>git clone https://github.com/AnantPlay/android
+cd android
+warp/build.sh     # builds the WARP helper into jni/ with the NDK
+./build.sh        # downloads the data files, then builds both APKs</code></pre>
+<p>You get <code>AnantPlay-TV-vX.Y.Z.apk</code> and <code>AnantPlay-Android-vX.Y.Z.apk</code>. On the first run <code>build.sh</code> creates a signing key (<code>release.jks</code> and <code>release.pass</code>). Keep it: a release signed with another key cannot update an installed one.</p>
+<p><code>VERSION_NAME</code> and <code>VERSION_CODE</code> can be set in the environment. <code>TEST_EXPORT=1 ./build.sh</code> builds emulator test APKs instead (<a href="#emulator">below</a>).</p>
+
+<h2 id="layout">Project layout</h2>
+<table><tr><th>Path</th><th>What is in it</th></tr>
+<tr><td><code>src/me/champdev/weblock/</code></td><td>The app (plain Java): <code>Home</code> (tabs), <code>WebActivity</code> (the browser), <code>PlayerActivity</code> (the player), <code>Sniffer</code> (stream detection), <code>Iptv*</code>, <code>Catalog</code>, <code>Sites</code>, <code>Warp</code>, <code>AdBlock</code></td></tr>
+<tr><td><code>assets/</code></td><td>Scripts injected into pages: <code>frame.js</code> (server, quality and episode finder, stream sniffing), <code>spatnav.js</code> (remote navigation), <code>roles.js</code>, <code>autosearch.js</code></td></tr>
+<tr><td><code>warp/</code></td><td>The Go helper: a userspace WireGuard client exposing a local HTTP proxy</td></tr>
+<tr><td><code>libs/</code></td><td>Media3, AndroidX WebKit and Guava as plain jars</td></tr>
+<tr><td><code>res/</code></td><td>Icons, drawables, theme</td></tr>
+<tr><td><code>scripts/fetch-assets.sh</code></td><td>Downloads the site lists and blocklist the app starts with (they are not stored in the repository)</td></tr>
+<tr><td><code>.github/workflows/</code></td><td>CI and release workflows</td></tr></table>
+
+<h2 id="signing">Signing</h2>
+<p>Android only installs an update when it is signed with the same key as the installed app, so the release key is permanent. To use one key locally and on GitHub:</p>
+<pre><code># encode the key once
+base64 -i release.jks | pbcopy        # macOS; on Linux: base64 -w0 release.jks
+# then add two repository secrets (Settings, Secrets and variables, Actions):
+#   KEYSTORE_B64   the base64 text
+#   KEYSTORE_PASS  the contents of release.pass</code></pre>
+<div class="note">Never commit <code>release.jks</code> or <code>release.pass</code>. <code>.gitignore</code> already excludes them; back them up somewhere private.</div>
+
+<h2 id="ci">GitHub Actions</h2>
+<p>Actions runs your commands on a GitHub-hosted Linux machine that already has the Android SDK and Java. Because the build is only shell commands, nothing else is needed.</p>
+<ul>
+<li><b>Build</b> (<code>.github/workflows/build.yml</code>): on every push and pull request it builds the WARP helper and both APKs and uploads them as a downloadable artifact. Without the signing secrets (forks, pull requests) it uses a throw-away key, which is fine for checking that the code builds.</li>
+<li><b>Release</b> (<code>.github/workflows/release.yml</code>): see below. It refuses to run without the signing secrets.</li>
+</ul>
+
+<h2 id="release">Publish a release</h2>
+<pre><code>git tag v2.12.0
+git push origin v2.12.0</code></pre>
+<p>The workflow takes the version from the tag (<code>v2.12.0</code> becomes version name <code>2.12.0</code> and version code <code>21200</code>, so codes always rise with the tag), builds and signs both APKs, writes <code>SHA256SUMS.txt</code> and creates the GitHub release with that version's section of <code>CHANGELOG.md</code> as its notes, so write it before you tag. Build releases only this way, so the version codes stay in order.</p>
+
+<h2 id="emulator">Emulator testing</h2>
+<p><code>TEST_EXPORT=1 ./build.sh</code> builds <code>AnantPlay-TV-test.apk</code> and <code>AnantPlay-Android-test.apk</code>. They export the browser and IPTV screens so you can open a test page from the command line, and the TV one also answers the Home key (an emulator image without a launcher shows a black screen otherwise).</p>
+<pre><code>adb shell am start -n me.champdev.weblock/.WebActivity \
+  --es site Test --es siteUrl http://10.0.2.2:8000/ --es url http://10.0.2.2:8000/test.html</code></pre>
+</article>
+</div></main>
+<footer>MIT licensed. AnantPlay does not host or distribute any media and is not affiliated with Cloudflare, Stremio, OpenSubtitles, the maintainers of any source, or any streaming site.<br>
+<a href="https://github.com/AnantPlay/android">Source</a> · <a href="https://github.com/AnantPlay/android/releases/latest">Releases</a> · <a href="https://github.com/AnantPlay/android/blob/main/THIRD_PARTY.md">Third-party notices</a></footer>
+</body></html>

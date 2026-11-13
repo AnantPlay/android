@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AnantPlay: any streaming site, a real player</title>
+<meta name="description" content="A TV-first Android app that finds the video a streaming site plays and plays it in its own player, AnantPlayer, with ad blocking, an in-app WARP tunnel, IPTV and a remote-friendly interface.">
+<meta property="og:title" content="AnantPlay: any streaming site, a real player"><meta property="og:description" content="A TV-first Android app that finds the video a streaming site plays and plays it in its own player, AnantPlayer, with ad blocking, an in-app WARP tunnel, IPTV and a remote-friendly interface."><meta property="og:image" content="banner.png">
+<meta name="theme-color" content="#120e1a"><link rel="icon" href="icon.png"><link rel="stylesheet" href="style.css">
+</head><body>
+<header class="nav"><div class="in">
+<a class="brand" href="index.html"><img src="icon.png" alt=""><span>Anant<b>Play</b></span></a>
+<nav><a href="index.html" class="on">Overview</a><a href="guide.html">User guide</a><a href="build.html">Build</a><a href="https://github.com/AnantPlay/android">GitHub</a><a href="https://buymeacoffee.com/rohit267">Support</a></nav>
+</div></header>
+
+<main>
+<section class="hero">
+<h1>Any streaming site,<br>a <b>real player</b>.</h1>
+<p class="lead">AnantPlay opens the sites you choose, finds the video they play and plays it natively: hardware decoding, nothing painted over the picture, and a remote-friendly interface.</p>
+<a class="btn p" href="https://github.com/AnantPlay/android/releases/latest">Download</a><a class="btn s" href="guide.html">User guide</a><a class="btn s" href="build.html">Build from source</a>
+<img class="shot" src="screenshots/player.jpg" alt="AnantPlayer">
+</section>
+
+<h2>What it does</h2>
+<p class="sub">Streaming sites are built for a mouse. AnantPlay keeps the site and replaces the part that does not work on a TV.</p>
+<div class="grid">
+<div class="card"><h3>AnantPlayer</h3><p>Finds the stream the page starts and plays it in ExoPlayer with the hardware decoder. One row of icons for quality, audio, subtitles and more; picture in picture and hold for 2x on a phone.</p></div>
+<div class="card"><h3>Series and anime</h3><p>Episodes, Previous and Next in the player, Skip intro and credits, a Next episode button, and Sub / Dub for anime. Episodes open directly on dozens of sites.</p></div>
+<div class="card"><h3>Drives the site for you</h3><p>Pick a title and the site opens on its page. The player's Episodes, Servers and Quality buttons press the site's own buttons, even inside cross-origin iframes. You never go back to the page. A loading screen with a cat covers the site while the app works, and holding Back for 3 seconds goes Home.</p></div>
+<div class="card"><h3>Cast to your TV</h3><p>Like YouTube: tap Cast in the phone's player and the TV carries on from the same spot, with the phone as the remote. Works with AnantPlay on the TV, any Chromecast, or DLNA smart TVs.</p></div>
+<div class="card"><h3>Subtitles and sound</h3><p>Subtitles in any language from OpenSubtitles, lined up with the speech by themselves and remembered per title. Volume boost and Dialog boost for quiet voices, and a debug overlay with the stream's resolution, codec, bitrate and network speed.</p></div>
+<div class="card"><h3>Resume anywhere</h3><p>Continue watching remembers your spot on any site or server, with New and Popular for Movies, TV and Anime on Home and one search for everything.</p></div>
+<div class="card"><h3>Your language</h3><p>English, Hindi, Spanish, Portuguese, Indonesian, Arabic and German, picked from the device's language.</p></div>
+<div class="card"><h3>Built for the remote</h3><p>Focus navigation designed for D-pads, a cursor mode for stubborn pages, and a TV launcher. On a phone: brightness and volume swipes, double-tap to skip.</p></div>
+<div class="card"><h3>Ad blocking and WARP</h3><p>Domain, pop-up and redirect blocking (links a site opens in a new window open in the same tab), plus an optional in-app Cloudflare WARP tunnel for the app's traffic only, with no VPN permission.</p></div>
+<div class="card"><h3>IPTV</h3><p>Channels from the playlist sources you add, by category and country, with Category and Language filters and pins. Offline ones are hidden by a background check; add your own playlists, Xtream Codes or Stalker portals.</p></div>
+<div class="card"><h3>Trackers</h3><p>Connect Simkl or PunchPlay with a code, and the movies and episodes you watch are tracked there.</p></div>
+</div>
+
+<h2>On the TV</h2>
+<p class="sub">Browse sites and a movie and series catalog, search by typing or voice, and pick up where you left off. Android TV, Google TV and Fire TV (Downloader code <b>9828006</b>, <a href="guide.html#firetv">how</a>).</p>
+<div class="two"><img class="shot" src="screenshots/home.jpg" alt="Home"><img class="shot" src="screenshots/sites.jpg" alt="Sites"></div>
+<div class="two" style="margin-top:16px"><img class="shot" src="screenshots/iptv.jpg" alt="IPTV"><img class="shot" src="screenshots/quality.jpg" alt="Quality"></div>
+
+<h2>Cast from your phone</h2>
+<p class="sub">Phone and TV on the same Wi-Fi. In the player, tap Cast and pick the TV: AnantPlay on the TV is recommended, any Chromecast works too. <a href="guide.html#cast">How to set it up</a></p>
+<img class="shot" src="cast.svg" alt="Cast from the phone to a TV on the same Wi-Fi">
+
+<h2>On the phone</h2>
+<p class="sub">The same app and the same player, on a touch screen.</p>
+<div class="phones"><img src="screenshots/phone-home.jpg" alt="Phone home"><img src="screenshots/phone-cast.jpg" alt="The phone as the remote"><img src="screenshots/phone-hindi.jpg" alt="Home in Hindi"></div>
+<img class="shot" src="screenshots/phone-player.jpg" alt="Phone player" style="max-width:760px;margin:18px auto 0">
+<div class="phones" style="margin-top:18px"><img src="screenshots/phone-iptv.jpg" alt="IPTV on a phone"></div>
+
+<h2>Under the hood</h2>
+<div class="grid">
+<div class="card"><h3>No Gradle</h3><p>Plain Java and the Android SDK command-line tools, about 11 MB per APK. A clean clone builds with two commands.</p></div>
+<div class="card"><h3>Signed releases</h3><p>Pushing a tag builds both APKs on GitHub Actions, signs them with the project key and publishes a release with checksums. <a href="https://www.virustotal.com/gui/file/894edb0ceb42657c3899cd4cb26bc1af1ecac9eb8fe07d5bde93e271e951040f/detection">VirusTotal</a> finds nothing in them.</p></div>
+<div class="card"><h3>Private by design</h3><p>No AnantPlay account, no analytics, no telemetry. The tunnel is a userspace WireGuard client that only carries this app's traffic.</p></div>
+</div>
+</main>
+<footer>MIT licensed. AnantPlay does not host or distribute any media and is not affiliated with Cloudflare, Stremio, OpenSubtitles, the maintainers of any source, or any streaming site.<br>
+<a href="https://github.com/AnantPlay/android">Source</a> · <a href="https://github.com/AnantPlay/android/releases/latest">Releases</a> · <a href="https://buymeacoffee.com/rohit267">Buy me a coffee</a> · <a href="https://paypal.me/champdev">PayPal</a> · <a href="privacy.html">Privacy</a> · <a href="https://github.com/AnantPlay/android/blob/main/THIRD_PARTY.md">Third-party notices</a></footer>
+</body></html>

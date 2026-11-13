@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="punchplay_help">Markiert Filme und Folgen, die du im Player schaust, auf PunchPlay als gesehen, einem kostenlosen Tracker. Titel aus Filme, Serien oder Anime.</string>
+    <string name="punchplay_disconnect_title">PunchPlay trennen?</string>
+    <string name="punchplay_disconnect_msg">AnantPlay meldet PunchPlay nicht mehr, was du schaust. Dein PunchPlay-Verlauf bleibt.</string>
+    <string name="punchplay_connect">PunchPlay verbinden</string>
+    <string name="punchplay_offline">PunchPlay nicht erreichbar. Prüf WARP und versuch es noch mal.</string>
+    <string name="punchplay_connected">PunchPlay verbunden</string>
+    <string name="punchplay_expired">Der Code ist abgelaufen. Schließ das hier und drück noch mal auf PunchPlay für einen neuen.</string>
+    <string name="punchplay_refused">PunchPlay hat abgelehnt. Schließ das hier und versuch es noch mal.</string>
+    <string name="punchplay_marked">Auf PunchPlay als gesehen markiert</string>
+</resources>

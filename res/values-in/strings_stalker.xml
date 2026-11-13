@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="stalker_button">Portal Stalker (MAC)</string>
+    <string name="stalker_title">Portal Stalker</string>
+    <string name="stalker_msg">Alamat portal dan alamat MAC dari penyedia IPTV kamu (login boks MAG)</string>
+    <string name="stalker_portal_hint">Portal, mis. http://example.com:8080/c/</string>
+    <string name="stalker_mac_hint">Alamat MAC, mis. 00:1A:79:12:34:56</string>
+    <string name="stalker_bad_mac">Alamat MAC terdiri dari enam pasang, mis. 00:1A:79:12:34:56</string>
+    <string name="stalker_cant_sign_in">Tidak bisa masuk: periksa alamat portal dan alamat MAC</string>
+    <string name="stalker_no_link">Portal tidak memberi tautan untuk saluran ini. Coba lagi sebentar lagi.</string>
+</resources>

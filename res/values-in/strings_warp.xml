@@ -1,0 +1,8 @@
+<resources>
+    <string name="warp_dns_title">DNS WARP</string>
+    <string name="warp_dns_help">DNS yang dipakai WARP untuk alamat Cloudflare. Otomatis berfungsi di sebagian besar jaringan; jika WARP tidak bisa terhubung, ketik DNS penyedia internet Anda.</string>
+    <string name="warp_dns_hint">Alamat server DNS, pisahkan dengan koma, misalnya 87.101.204.72</string>
+    <string name="warp_dns_auto">Otomatis</string>
+    <string name="warp_dns_save">Simpan</string>
+    <string name="warp_dns_msg">Tempat WARP mencari Cloudflare. Alamat DNS penyedia Anda ada di halaman status router. Kosongkan untuk Otomatis (DNS jaringan Anda ditambah DNS publik).</string>
+</resources>

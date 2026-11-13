@@ -1,0 +1,8 @@
+<resources>
+    <string name="warp_dns_title">WARP DNS</string>
+    <string name="warp_dns_help">WARP Cloudflare का पता किस DNS से पूछे। ज़्यादातर नेटवर्क पर ऑटोमैटिक ठीक चलता है; अगर WARP कनेक्ट न हो, तो अपने इंटरनेट प्रोवाइडर का DNS डालें।</string>
+    <string name="warp_dns_hint">DNS सर्वर के पते, कॉमा से अलग करके, जैसे 87.101.204.72</string>
+    <string name="warp_dns_auto">ऑटोमैटिक</string>
+    <string name="warp_dns_save">सेव करें</string>
+    <string name="warp_dns_msg">WARP Cloudflare को कहाँ खोजता है। आपके प्रोवाइडर के DNS पते राउटर के स्टेटस पेज पर होते हैं। ऑटोमैटिक के लिए खाली छोड़ें (आपके नेटवर्क का DNS और पब्लिक DNS)।</string>
+</resources>

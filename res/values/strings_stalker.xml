@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="stalker_button">Stalker portal (MAC)</string>
+    <string name="stalker_title">Stalker portal</string>
+    <string name="stalker_msg">The portal address and MAC address from your IPTV provider (the MAG box login)</string>
+    <string name="stalker_portal_hint">Portal, e.g. http://example.com:8080/c/</string>
+    <string name="stalker_mac_hint">MAC address, e.g. 00:1A:79:12:34:56</string>
+    <string name="stalker_bad_mac">A MAC address is six pairs, e.g. 00:1A:79:12:34:56</string>
+    <string name="stalker_cant_sign_in">Can\'t sign in: check the portal address and MAC address</string>
+    <string name="stalker_no_link">The portal gave no link for this channel. Try again in a moment.</string>
+</resources>

@@ -1,0 +1,8 @@
+<resources>
+    <string name="warp_dns_title">DNS الخاص بـ WARP</string>
+    <string name="warp_dns_help">أي DNS يستخدمه WARP لعنوان Cloudflare. الوضع التلقائي يعمل على معظم الشبكات؛ إذا تعذّر اتصال WARP فاكتب DNS مزوّد الإنترنت لديك.</string>
+    <string name="warp_dns_hint">عناوين خوادم DNS مفصولة بفواصل، مثل 87.101.204.72</string>
+    <string name="warp_dns_auto">تلقائي</string>
+    <string name="warp_dns_save">حفظ</string>
+    <string name="warp_dns_msg">أين يبحث WARP عن Cloudflare. تجد عناوين DNS لمزوّدك في صفحة حالة الراوتر. اتركه فارغًا للوضع التلقائي (DNS شبكتك مع خوادم DNS عامة).</string>
+</resources>
