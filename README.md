@@ -150,7 +150,7 @@ Requires Android 8.0 (API 26) or newer, arm64 or 32-bit ARM.
 1. On the Fire TV: *Settings → My Fire TV → About*, press OK on the device name 7 times (developer options on).
 2. Install **Downloader** (by AFTVnews) from the Amazon Appstore.
 3. *Settings → My Fire TV → Developer options → Install unknown apps* → turn on **Downloader**.
-4. In Downloader, type `https://github.com/AnantPlay/android/releases/latest/download/AnantPlay-TV.apk`, then *Go → Install → Open*.
+4. In Downloader, type the code **`6664733`** or `https://github.com/AnantPlay/android/releases/latest/download/AnantPlay-TV.apk`, then *Go → Install → Open*.
 
 Fire OS 7 or newer (Fire TV Stick 4K and later). The app updates itself afterwards. That link always gets the newest TV APK (`AnantPlay-Android.apk` for phones).
 
