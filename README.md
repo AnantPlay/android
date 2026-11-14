@@ -56,6 +56,7 @@ Streaming sites are built for a desktop browser with a mouse. On a TV remote the
 - Replays the page's Referer, Origin and cookies, so streams that check them still play
 - **Resumes where you stopped on any site or server**, with a Restart button; the place is saved every 10 seconds while you watch, and the subtitles you had on come back
 - Quality list with frame rate (for example 1080p60), audio and subtitle tracks, speed and zoom modes
+- **Auto quality that fits the device** (screen, memory and heap), with *Settings, Player, Highest quality* to set it yourself, and a default **Audio language**
 - **Servers and Quality buttons that control the site's own player**, including players inside cross-origin iframes
 - **Volume boost** and **Dialog boost** (clearer voices), each from 0 to 20, in Settings or in the player
 - **Debug overlay** (*More, Debug overlay*, off by default): a panel down the right edge with resolution, frame rate, codec and decoder (hardware or software), video and audio bitrate, network speed, buffer, frames shown and dropped, stream type, host, how long the video took to open, and memory, refreshed every second
@@ -72,9 +73,10 @@ Streaming sites are built for a desktop browser with a mouse. On a TV remote the
 
 **Browsing**
 - Home with Continue watching, Favorites, **your country's movies and series first** (by language, from TMDB), then **New and Popular** for Movies, TV and Anime (from Cinemeta and Kitsu)
+- **Platforms, Studios and Kids**: browse by streaming service (Netflix, Prime Video, Disney+ with Disney, Pixar, Marvel, Star Wars...), by studio (DreamWorks, Paramount, Universal...) or the Kids section; every page is rows (Popular, Top rated, New, genres, sagas) and each row's **More** opens the whole list
 - A side rail on a TV, bottom tabs on a phone; pull down to refresh; trailers on title pages
 - A Home banner that changes every 20 seconds through the world's top 5 films and series; lists that keep loading as you scroll
-- **One search** for movies, series, IPTV channels and sites, by typing or by voice
+- **One search** for movies, series, IPTV channels and sites, by typing or by voice, with your recent searches under the box
 - **Sources you pick**: the app ships with no sites or channels. *Settings, Sources* lists an index (AnantPlay's own, or any you add by link) with an **Add** button per source: streaming sites, channel playlists, title links. Added sources refresh every 12 hours
 - Opens a title's own page on sites that have title links and searches the rest for you, then opens the match
 - Anime opens on anime sites only

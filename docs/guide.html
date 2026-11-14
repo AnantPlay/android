@@ -45,6 +45,8 @@ adb install -r AnantPlay-TV-vX.Y.Z.apk</code></pre>
 <ul>
 <li><b>Sites</b> are the streaming sites from the sources you added (<a href="#sources">Sources</a>), grouped by what they carry. Pick one to open it. With no source added, each tab shows an <i>Add sources</i> button instead.</li>
 <li><b>Catalog rows</b> show what is new and popular. Pick a title (its page has a <i>Trailer</i> button), then <i>Watch on</i> a site; a series starts at its first episode unless you pick another from the list (50 at a time, <i>Load more</i> for the rest): on sites your title-links source knows it opens the title's own page (or the episode you picked), on the others it searches for the name and opens the match. Anime titles list anime sites only, and the sites that open episodes directly come first.</li>
+<li><b>Platforms</b> (Home, Movies, TV) are the streaming services: pick one for rows of what is on it (Popular, Top rated, New, then a row per genre). Disney+ also has its brands on top (Disney, Pixar, Marvel, Star Wars, National Geographic). <b>Studios</b> and <b>Kids</b> on Home work the same way. A brand's page has its own rows (Marvel: MCU, Avengers, X-Men...) and <i>All / Movies / Series</i> chips.</li>
+<li>A row of titles shows 15; <b>More</b> at its end opens the whole list as a grid, in the same order.</li>
 <li><b>Continue watching</b> on Home brings back the last titles you opened.</li>
 <li>Hold <kbd>OK</kbd> (long-press on a phone) on a site for favorites and mirrors.</li>
 </ul>
@@ -98,7 +100,7 @@ adb install -r AnantPlay-TV-vX.Y.Z.apk</code></pre>
 <p>One row of buttons at the bottom; the line under the title says what is playing and what is picked (for example <i>Season 2 · Episode 3 · 1080p · English · Dub</i>). A button only shows when it has something to offer.</p>
 <table><tr><th>Button</th><th>What it does</th></tr>
 <tr><td>Previous, Next</td><td>The episode before or after this one (series and anime).</td></tr>
-<tr><td>Quality</td><td>The qualities the stream offers (with frame rate, for example <code>1080p60</code>), or the site's own quality list for sites that serve one playlist per quality.</td></tr>
+<tr><td>Quality</td><td>The qualities the stream offers (with frame rate, for example <code>1080p60</code>), or the site's own quality list for sites that serve one playlist per quality. <i>Auto</i> stops at what the device plays smoothly; <i>Settings, Player, Highest quality</i> sets the limit yourself.</td></tr>
 <tr><td>Audio</td><td>The stream's audio tracks by language. The language you pick is remembered: the next videos start in it when they have it, otherwise in your device's language.</td></tr>
 <tr><td>SUB / DUB</td><td>Anime: switches between subtitled and dubbed in one press. The badge says which is playing, and each site remembers your pick.</td></tr>
 <tr><td>Episodes</td><td>A strip of episodes along the bottom, each with its picture and name, while the video keeps playing. The one playing is marked; pick another and it opens. For a live channel the same button is <i>Channels</i> (the channel's category in its country), for a movie <i>More to watch</i>. <kbd>Down</kbd> from the buttons opens it too; the button again, <kbd>Back</kbd> or a tap outside closes it.</td></tr>
