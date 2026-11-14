@@ -218,4 +218,10 @@
     <string name="home_about_site">वेबसाइट</string>
     <string name="home_about_source">सोर्स कोड</string>
     <string name="home_about_bug">समस्या बताएं</string>
+    <string name="home_max_quality">सबसे ऊंची क्वालिटी</string>
+    <string name="home_max_quality_help">ऑटो इस क्वालिटी तक चुनता है। ऑटो: जो यह डिवाइस बिना अटके चला सके (इसकी स्क्रीन और मेमोरी के हिसाब से)। प्लेयर में खुद चुनी गई क्वालिटी पर कोई सीमा नहीं।</string>
+    <string name="home_auto_value">ऑटो (%1$s)</string>
+    <string name="home_audio_language">ऑडियो भाषा</string>
+    <string name="home_audio_language_help">जिन वीडियो में एक से ज़्यादा ऑडियो ट्रैक हैं, वे इस भाषा में शुरू होते हैं अगर उनमें यह हो। प्लेयर का ऑडियो बटन भी इसे बदलता है।</string>
+    <string name="home_audio_original">ओरिजिनल</string>
 </resources>

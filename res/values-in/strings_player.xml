@@ -122,4 +122,5 @@
     <string name="player_more">Lainnya</string>
     <string name="player_channels">Saluran</string>
     <string name="player_more_watch">Tontonan lain</string>
+    <string name="player_auto_up_to">Otomatis · hingga %1$s</string>
 </resources>

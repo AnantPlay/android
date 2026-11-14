@@ -218,4 +218,10 @@
     <string name="home_about_site">الموقع</string>
     <string name="home_about_source">الشيفرة المصدرية</string>
     <string name="home_about_bug">الإبلاغ عن مشكلة</string>
+    <string name="home_max_quality">أعلى جودة</string>
+    <string name="home_max_quality_help">يختار الوضع التلقائي حتى هذه الجودة. تلقائي: ما يشغّله هذا الجهاز بسلاسة (حسب شاشته وذاكرته). الجودة التي تختارها في المشغّل غير مقيّدة.</string>
+    <string name="home_auto_value">تلقائي (%1$s)</string>
+    <string name="home_audio_language">لغة الصوت</string>
+    <string name="home_audio_language_help">تبدأ الفيديوهات التي فيها أكثر من مسار صوتي بهذه اللغة عندما تتوفر. يغيّرها زر الصوت في المشغّل أيضًا.</string>
+    <string name="home_audio_original">الأصلية</string>
 </resources>

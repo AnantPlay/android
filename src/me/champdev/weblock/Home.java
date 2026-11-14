@@ -1660,6 +1660,15 @@ public class Home extends Activity {
             Subs.panel(this, false, () -> subValue.setText(Subs.sizeLabel() + " \u00B7 " + Subs.offsetLabel()), this::rebuild)));
         subValue.setText(Subs.sizeLabel() + " \u00B7 " + Subs.offsetLabel());
         subValue.setTextColor(Subs.size() == 100 && Subs.offset() == 0 && Subs.background() == 50 && Subs.colorIndex() == 0 ? MUTED : GREEN);
+        TextView qualityValue = new TextView(this);
+        int cap = App.prefs.getInt("maxQuality", 0);
+        secBox.addView(settingRow(R.drawable.ic_p_quality, App.t(R.string.home_max_quality), App.t(R.string.home_max_quality_help), qualityValue, v -> qualityDialog()));
+        qualityValue.setText(cap == 0 ? App.t(R.string.home_auto_value, PlayerActivity.heightLabel(PlayerActivity.autoMaxHeight(this))) : PlayerActivity.heightLabel(cap));
+        qualityValue.setTextColor(cap == 0 ? MUTED : GREEN);
+        TextView audioValue = new TextView(this);
+        secBox.addView(settingRow(R.drawable.ic_p_audio, App.t(R.string.home_audio_language), App.t(R.string.home_audio_language_help), audioValue, v -> audioLanguageDialog()));
+        audioValue.setText(audioLanguageName(App.prefs.getString("audioLang", "")));
+        audioValue.setTextColor(App.prefs.getString("audioLang", "").isEmpty() ? MUTED : GREEN);
         TextView boostValue = new TextView(this);
         secBox.addView(settingRow(R.drawable.ic_p_volume, App.t(R.string.home_volume_boost), App.t(R.string.home_volume_boost_help), boostValue, v -> audioPanel()));
         boostValue.setText(PlayerActivity.boostLabel(PlayerActivity.boostDb()));
@@ -1792,6 +1801,38 @@ public class Home extends Activity {
         for (String c : codes) names.add(c.isEmpty() ? App.t(R.string.warp_dns_auto) : c.equals("-") ? App.t(R.string.home_off) : new java.util.Locale("", c).getDisplayCountry());
         new AlertDialog.Builder(this).setTitle(App.t(R.string.home_region)).setItems(names.toArray(new String[0]), (d, i) -> {
             App.prefs.edit().putString("region", codes.get(i)).apply();
+            rebuild();
+        }).show();
+    }
+
+    void qualityDialog() {
+        int[] caps = PlayerActivity.QUALITY_CAPS;
+        String[] names = new String[caps.length];
+        for (int i = 0; i < caps.length; i++) names[i] = caps[i] == 0 ? App.t(R.string.home_auto_value, PlayerActivity.heightLabel(PlayerActivity.autoMaxHeight(this))) : PlayerActivity.heightLabel(caps[i]);
+        new AlertDialog.Builder(this).setTitle(App.t(R.string.home_max_quality)).setItems(names, (d, i) -> {
+            App.prefs.edit().putInt("maxQuality", caps[i]).apply();
+            rebuild();
+        }).show();
+    }
+
+    // The languages dubs most often come in; the rest still work through the player's Audio button, which remembers its pick too
+    static final String[] AUDIO_LANGS = {"en", "hi", "ta", "te", "ml", "kn", "bn", "mr", "es", "pt", "fr", "de", "it", "ru", "tr", "ar", "id", "ja", "ko", "zh"};
+
+    static String audioLanguageName(String code) {
+        return code.isEmpty() ? App.t(R.string.home_auto_value, new java.util.Locale(java.util.Locale.getDefault().getLanguage()).getDisplayLanguage())
+            : code.equals(PlayerActivity.ORIGINAL) ? App.t(R.string.home_audio_original) : new java.util.Locale(code).getDisplayLanguage();
+    }
+
+    /** The audio language every video starts in when it has it (the same choice the player's Audio button remembers). */
+    void audioLanguageDialog() {
+        List<String> codes = new ArrayList<>(java.util.Arrays.asList("", PlayerActivity.ORIGINAL));
+        codes.addAll(java.util.Arrays.asList(AUDIO_LANGS));
+        String now = App.prefs.getString("audioLang", "");
+        if (!codes.contains(now)) codes.add(2, now);   // a language picked in the player that is not in the list
+        String[] names = new String[codes.size()];
+        for (int i = 0; i < names.length; i++) names[i] = audioLanguageName(codes.get(i)) + (codes.get(i).equals(now) ? "  \u2713" : "");
+        new AlertDialog.Builder(this).setTitle(App.t(R.string.home_audio_language)).setItems(names, (d, i) -> {
+            App.prefs.edit().putString("audioLang", codes.get(i)).apply();
             rebuild();
         }).show();
     }

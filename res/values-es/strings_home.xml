@@ -218,4 +218,10 @@
     <string name="home_about_site">Sitio web</string>
     <string name="home_about_source">Código fuente</string>
     <string name="home_about_bug">Informar de un problema</string>
+    <string name="home_max_quality">Calidad máxima</string>
+    <string name="home_max_quality_help">Automático elige hasta esta calidad. Automático: lo que este dispositivo reproduce con fluidez (su pantalla y su memoria). Una calidad elegida en el reproductor no tiene límite.</string>
+    <string name="home_auto_value">Automático (%1$s)</string>
+    <string name="home_audio_language">Idioma del audio</string>
+    <string name="home_audio_language_help">Los videos con más de una pista de audio empiezan en este idioma cuando lo tienen. El botón Audio del reproductor también lo cambia.</string>
+    <string name="home_audio_original">Original</string>
 </resources>

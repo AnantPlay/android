@@ -125,4 +125,5 @@
     <string name="player_more">More</string>
     <string name="player_channels">Channels</string>
     <string name="player_more_watch">More to watch</string>
+    <string name="player_auto_up_to">Auto · up to %1$s</string>
 </resources>

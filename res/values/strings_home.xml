@@ -218,4 +218,10 @@
     <string name="home_about_site">Website</string>
     <string name="home_about_source">Source code</string>
     <string name="home_about_bug">Report a problem</string>
+    <string name="home_max_quality">Highest quality</string>
+    <string name="home_max_quality_help">Auto picks up to this. Auto: what this device plays smoothly (its screen, and memory). A quality picked in the player is not limited.</string>
+    <string name="home_auto_value">Auto (%1$s)</string>
+    <string name="home_audio_language">Audio language</string>
+    <string name="home_audio_language_help">Videos with more than one audio track start in this language when they have it. The player\'s Audio button changes it too.</string>
+    <string name="home_audio_original">Original</string>
 </resources>

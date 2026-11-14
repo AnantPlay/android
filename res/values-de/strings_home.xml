@@ -218,4 +218,10 @@
     <string name="home_about_site">Website</string>
     <string name="home_about_source">Quellcode</string>
     <string name="home_about_bug">Problem melden</string>
+    <string name="home_max_quality">Höchste Qualität</string>
+    <string name="home_max_quality_help">Auto wählt höchstens diese Qualität. Auto: was dieses Gerät flüssig abspielt (Bildschirm und Speicher). Eine im Player gewählte Qualität ist nicht begrenzt.</string>
+    <string name="home_auto_value">Auto (%1$s)</string>
+    <string name="home_audio_language">Audiosprache</string>
+    <string name="home_audio_language_help">Videos mit mehreren Tonspuren starten in dieser Sprache, wenn sie sie haben. Die Audio-Taste im Player ändert sie auch.</string>
+    <string name="home_audio_original">Original</string>
 </resources>

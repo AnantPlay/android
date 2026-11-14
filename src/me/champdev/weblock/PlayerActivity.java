@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -844,6 +845,39 @@ public class PlayerActivity extends Activity {
     }
 
     /** "1080p60": the height and, when the frame rate is known, the rate rounded (23.976 is 24, 59.94 is 60). */
+    // ---- defaults: the tallest picture Auto plays, and the audio language ----
+
+    static final int[] QUALITY_CAPS = {0, 2160, 1440, 1080, 720, 480};   // Settings, Highest quality; 0 = this device decides
+    static final String ORIGINAL = "orig";                                 // audioLang: the stream's own default track
+
+    /**
+     * What this device plays smoothly: its screen's height, and no more than 1080p with under 3 GB of memory or a player heap under
+     * 256 MB (a 2.4 GB TV dropped frames at 4K), 720p under 1.5 GB.
+     */
+    static int autoMaxHeight(Context c) {
+        int screen = 0;
+        try {
+            for (android.view.Display.Mode m : c.getSystemService(android.hardware.display.DisplayManager.class).getDisplay(android.view.Display.DEFAULT_DISPLAY).getSupportedModes())
+                screen = Math.max(screen, Math.min(m.getPhysicalWidth(), m.getPhysicalHeight()));
+        } catch (RuntimeException ignored) { }
+        android.app.ActivityManager am = c.getSystemService(android.app.ActivityManager.class);
+        android.app.ActivityManager.MemoryInfo mi = new android.app.ActivityManager.MemoryInfo();
+        am.getMemoryInfo(mi);
+        long mb = mi.totalMem >> 20;
+        int memory = am.isLowRamDevice() || mb < 1536 ? 720 : mb < 3072 || am.getMemoryClass() < 256 ? 1080 : Integer.MAX_VALUE;
+        return Math.min(screen > 0 ? screen : 1080, memory);
+    }
+
+    static int maxHeight(Context c) {
+        int set = App.prefs.getInt("maxQuality", 0);
+        return set > 0 ? set : autoMaxHeight(c);
+    }
+
+    static String[] audioLanguages() {
+        String set = App.prefs.getString("audioLang", ""), device = Locale.getDefault().getLanguage();
+        return set.equals(ORIGINAL) ? new String[0] : set.isEmpty() || set.equals(device) ? new String[]{device} : new String[]{set, device};
+    }
+
     static String qualityLabel(int h, float fps) {
         String base = heightLabel(h);
         return base.isEmpty() || fps <= 0 ? base : base + Math.round(fps);
@@ -1091,11 +1125,11 @@ public class PlayerActivity extends Activity {
         // Its own audio session from the start, so the boosts attach to this video only (session 0 would be all of the phone's sound)
         player.setAudioSessionId(((AudioManager) getSystemService(AUDIO_SERVICE)).generateAudioSessionId());
         applyBoost(false);
-        // Side-loaded subtitles stay off until picked on the Subtitles button. Audio: the language last picked on the Audio
-        // button (a dub the stream offers), else the device's, else whatever the stream marks as default (often English)
-        String audio = App.prefs.getString("audioLang", "");
+        // Side-loaded subtitles stay off until picked on the Subtitles button. Audio: the language set in Settings or last picked on
+        // the Audio button (a dub the stream offers), else the device's; "Original" keeps whatever the stream marks as its default.
+        // Quality: Auto stops at what this device plays smoothly (maxHeight); a quality picked by hand is not limited
         player.setTrackSelectionParameters(player.getTrackSelectionParameters().buildUpon().setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)
-            .setPreferredAudioLanguages(audio.isEmpty() ? new String[]{Locale.getDefault().getLanguage()} : new String[]{audio, Locale.getDefault().getLanguage()}).build());
+            .setPreferredAudioLanguages(audioLanguages()).setMaxVideoSize(Integer.MAX_VALUE, maxHeight(this)).build());
         player.addAnalyticsListener(stats);
         player.addListener(new Player.Listener() {
             @Override public void onPlaybackStateChanged(int s) {
@@ -1455,7 +1489,10 @@ public class PlayerActivity extends Activity {
         }
         List<String> labels = new ArrayList<>();
         List<TrackSelectionOverride> picks = new ArrayList<>();
-        labels.add(App.t(R.string.player_auto));
+        int cap = maxHeight(this);
+        boolean capped = false;
+        for (int key : byKey.keySet()) if (key / 1000 > cap) capped = true;
+        labels.add(capped ? App.t(R.string.player_auto_up_to, heightLabel(cap)) : App.t(R.string.player_auto));   // "Auto · up to 1080p" when the stream has more
         picks.add(null);
         for (Map.Entry<Integer, TrackSelectionOverride> en : byKey.entrySet()) {
             labels.add(names.get(en.getKey()));

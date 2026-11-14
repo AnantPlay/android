@@ -218,4 +218,10 @@
     <string name="home_about_site">Situs web</string>
     <string name="home_about_source">Kode sumber</string>
     <string name="home_about_bug">Laporkan masalah</string>
+    <string name="home_max_quality">Kualitas tertinggi</string>
+    <string name="home_max_quality_help">Otomatis memilih sampai kualitas ini. Otomatis: yang diputar lancar oleh perangkat ini (layar dan memorinya). Kualitas yang dipilih di pemutar tidak dibatasi.</string>
+    <string name="home_auto_value">Otomatis (%1$s)</string>
+    <string name="home_audio_language">Bahasa audio</string>
+    <string name="home_audio_language_help">Video dengan lebih dari satu trek audio dimulai dalam bahasa ini jika tersedia. Tombol Audio di pemutar juga mengubahnya.</string>
+    <string name="home_audio_original">Asli</string>
 </resources>

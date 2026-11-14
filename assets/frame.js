@@ -4,6 +4,31 @@
 //   click   = press one of the choices that were listed
 //   episode = press an episode (and its season) in the page's own episode list
 //   play    = start the page's player
+// Autoplay off: a muted or looping video that starts by itself (a hero trailer, a card preview, a background clip) is stopped
+// before it plays, so the page keeps its Play button and the TV does not spend its decoder on video nobody watches.
+// It plays when the user just pressed OK or clicked, when the app starts the page's player (__apAllowPlay), and always on a
+// watch / play page. Only the page itself and trailer hosts' frames: embedded players are left alone.
+(() => {
+  if (window.__apAuto) return;
+  window.__apAuto = 1;
+  if (window !== top && !/(^|\.)(youtube(-nocookie)?\.com|vimeo\.com|imdb\.com|dailymotion\.com)$/i.test(location.hostname)) return;
+  let okAt = 0;
+  const ok = () => { okAt = Date.now(); };
+  window.__apAllowPlay = ok;
+  addEventListener('keydown', e => { if (e.isTrusted && /^(Enter| |MediaPlayPause|MediaPlay)$/.test(e.key)) ok(); }, true);
+  for (const t of ['pointerdown', 'click', 'touchstart']) addEventListener(t, e => { if (e.isTrusted) ok(); }, true);
+  const watching = () => /\/(watch|play|player|embed|stream)\b|[?&](play|autoplay)=(1|true)\b/i.test(location.pathname + location.search) && window === top;
+  const unasked = v => (v.muted || v.defaultMuted || v.loop) && Date.now() - okAt > 2000 && !watching();
+  const stop = v => { v.autoplay = false; v.removeAttribute('autoplay'); v.pause(); };
+  document.addEventListener('play', e => { if (e.target instanceof HTMLMediaElement && unasked(e.target)) stop(e.target); }, true);
+  const play = HTMLMediaElement.prototype.play;
+  HTMLMediaElement.prototype.play = function () {
+    if (!unasked(this)) return play.apply(this, arguments);
+    stop(this);
+    return Promise.reject(new DOMException('Autoplay is off', 'NotAllowedError'));   // what a browser says when it blocks autoplay: sites show their Play button
+  };
+})();
+
 (() => {
   if (window.__fpf) return;
   window.__fpf = 1;
@@ -459,6 +484,7 @@
       if (await pickEpisode(d.s, d.e) && window.AnantPlay) AnantPlay.episodeFound();
     } else if (d.fp === 'play') {
       down(d);
+      if (window.__apAllowPlay) window.__apAllowPlay();
       startPlayer();
     } else if (d.fp === 'reply') up(d);
     else if (d.fp === 'click') {
@@ -518,7 +544,7 @@
 (() => {
   if (window !== top || window.__fpNag) return;
   window.__fpNag = 1;
-  const nag = /discord|telegram|reddit|join (us|our)|what'?s new|changelog|release notes|announcement|new update|v\d+\.\d+|donat|support us|patreon|ko-?fi|ad ?block|new domain|bookmark|official (site|domain)|mirror/i;
+  const nag = /discord|telegram|reddit|join (us|our)|what'?s new|good news|issues (are|have been) (fixed|resolved)|is back\b|changelog|release notes|announcement|new update|v\d+\.\d+|donat|support us|patreon|ko-?fi|ad ?block|new domain|bookmark|official (site|domain)|mirror/i;
   const closeWord = /^(got it!?|ok(ay)?|close|dismiss|(maybe )?later|no,? thanks|not now|skip|continue( to site)?|i understand|understood|x|×|✕|✖)$/i;
   const visible = e => { const r = e.getBoundingClientRect(), s = getComputedStyle(e); return r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && s.display !== 'none' && +s.opacity > 0.05; };
   const dialogs = () => [...document.querySelectorAll('[role=dialog],[role=alertdialog],[aria-modal=true],dialog[open],[class*=modal i],[class*=popup i],[class*=dialog i],[class*=announce i],[class*=changelog i]')].filter(d => {

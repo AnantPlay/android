@@ -122,4 +122,5 @@
     <string name="player_more">المزيد</string>
     <string name="player_channels">القنوات</string>
     <string name="player_more_watch">المزيد للمشاهدة</string>
+    <string name="player_auto_up_to">تلقائي · حتى %1$s</string>
 </resources>

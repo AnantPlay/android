@@ -122,4 +122,5 @@
     <string name="player_more">Más</string>
     <string name="player_channels">Canales</string>
     <string name="player_more_watch">Más para ver</string>
+    <string name="player_auto_up_to">Automático · hasta %1$s</string>
 </resources>
