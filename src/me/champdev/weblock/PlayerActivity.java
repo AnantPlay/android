@@ -878,6 +878,19 @@ public class PlayerActivity extends Activity {
         return set.equals(ORIGINAL) ? new String[0] : set.isEmpty() || set.equals(device) ? new String[]{device} : new String[]{set, device};
     }
 
+    /** A site's audio choice ("Hindi", "हिन्दी", "Hindi Dub") is the language set in Settings (Auto: the device's). */
+    static boolean preferredLanguage(String label) {
+        String set = App.prefs.getString("audioLang", "");
+        if (set.equals(ORIGINAL)) return false;
+        Locale l = new Locale(set.isEmpty() ? Locale.getDefault().getLanguage() : set);
+        String have = label.trim().toLowerCase(Locale.ROOT);
+        for (String name : new String[]{l.getDisplayLanguage(Locale.ENGLISH), l.getDisplayLanguage(l), l.getDisplayLanguage()}) {
+            String n = name.toLowerCase(Locale.ROOT);
+            if (!n.isEmpty() && (have.equals(n) || have.startsWith(n + " ") || have.startsWith(n + "("))) return true;
+        }
+        return false;
+    }
+
     static String qualityLabel(int h, float fps) {
         String base = heightLabel(h);
         return base.isEmpty() || fps <= 0 ? base : base + Math.round(fps);

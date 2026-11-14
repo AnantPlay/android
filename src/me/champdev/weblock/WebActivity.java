@@ -457,7 +457,7 @@ public class WebActivity extends Activity {
 
             @Override public void doUpdateVisitedHistory(WebView v, String url, boolean reload) {
                 mainNavAt = SystemClock.uptimeMillis();
-                if (!Sniffer.path(url).equals(Sniffer.path(String.valueOf(audiosAt)))) audios.clear();   // another episode or title
+                if (!Sniffer.path(url).equals(Sniffer.path(String.valueOf(audiosAt)))) { audios.clear(); servers.clear(); qualities.clear(); }   // another episode or title
                 audiosAt = url;
                 if (urlBar != null) urlBar.setText(url);
                 sniffer.page(url);
@@ -546,11 +546,12 @@ public class WebActivity extends Activity {
     // A stream just appeared: look for the page's server list now, while the page is still awake
     void onSeen() {
         if (!resumed || isFinishing()) return;
-        servers.clear();
-        qualities.clear();   // Sub / Dub stays until the page changes: a scan right after a switch may miss its menu
+        // the lists are not emptied here: a site that starts two streams (Bingr) emptied them after the first scan answered, and the
+        // second answer came after the player had paused the page. The first answer to this scan replaces them instead (Bridge.servers)
         scanDone = false;
+        scanGen++;
         web.evaluateJavascript(CHIP, null);   // a stream is here: the button stays until the player takes it, or for you to press
-        web.evaluateJavascript("postMessage({fp:'servers'},'*')", null);
+        web.evaluateJavascript("postMessage({fp:'servers',gen:" + scanGen + "},'*')", null);
     }
 
     // Hand the stream over, but let the server scan finish first (it needs the page awake; the player pauses it), at most 3 s (a Servers menu takes a second to open)
@@ -564,6 +565,7 @@ public class WebActivity extends Activity {
 
     // (not Handler.hasCallbacks: it needs Android 10 and the app runs on 8 and 9)
     volatile boolean handoffWaiting;
+    int scanGen, listsGen;   // the newest scan asked for, and the scan the Servers / Quality lists come from
     final Runnable waitedHandoff = () -> { handoffWaiting = false; if (resumed && !isFinishing() && !holdForEpisode && sniffer.best() != null) playNative(); };
 
     void playNative() {
@@ -580,7 +582,7 @@ public class WebActivity extends Activity {
         if (origin == null && ref != null && !originOf(ref).equals(originOf(h.url))) origin = originOf(ref);
         if (origin != null) hd.put("Origin", origin);
         // Keep the page's own player quiet underneath
-        web.evaluateJavascript("postMessage({fp:'pause'},'*');document.querySelectorAll('video,audio').forEach(m=>m.pause());var c=document.getElementById('fp-native');c&&c.remove()", null);
+        web.evaluateJavascript("postMessage({fp:'pause',hold:1},'*');document.querySelectorAll('video,audio').forEach(m=>m.pause());var c=document.getElementById('fp-native');c&&c.remove()", null);
         Intent in = getIntent();
         startActivityForResult(PlayerActivity.open(this, h.url, h.dash, hd, sniffer.subtitles(), String.valueOf(web.getTitle()))
             .putExtra("pageTitle", String.valueOf(web.getTitle())).putExtra("pageUrl", String.valueOf(web.getUrl())).putExtra("site", site)
@@ -600,7 +602,10 @@ public class WebActivity extends Activity {
      * before, press it now, before the stream goes to the player. If the stream does not change in a few seconds, put it back.
      */
     boolean tryPreferredAudio() {
-        String want = App.prefs.getString("siteAudio:" + siteKey(), ""), url = String.valueOf(web.getUrl());
+        String picked = App.prefs.getString("siteAudio:" + siteKey(), ""), url = String.valueOf(web.getUrl());
+        // never picked on this site: the audio language from Settings (a site's English / Hindi / ... list)
+        if (picked.isEmpty()) for (String[] v : audios.values()) if (PlayerActivity.preferredLanguage(v[0])) { picked = v[0]; break; }
+        final String want = picked;
         if (want.isEmpty() || audios.size() < 2 || url.equals(audioTriedAt) || want.equals(audioNoop) || PlayerActivity.current != null) return false;
         audioTriedAt = url;
         String wantKey = null, nowKey = null;
@@ -817,11 +822,13 @@ public class WebActivity extends Activity {
 
     public class Bridge {
         // A frame found server buttons: keep them for the native player's Servers list
-        @JavascriptInterface public void servers(String json) {
+        @JavascriptInterface public void servers(String json, int gen) {
             try {
                 JSONArray a = new JSONArray(json);
                 App.main.post(() -> {
                     try {
+                        if (gen < listsGen) return;   // an answer to an older scan
+                        if (gen > listsGen) { servers.clear(); qualities.clear(); listsGen = gen; }   // the first answer to a newer one starts the lists afresh
                         for (int i = 0; i < a.length(); i++) if ("a".equals(a.getJSONObject(i).optString("kind"))) { audios.clear(); break; }   // a fresh Sub / Dub list
                         for (int i = 0; i < a.length(); i++) {
                             JSONObject o = a.getJSONObject(i);
@@ -1134,6 +1141,8 @@ public class WebActivity extends Activity {
     @Override protected void onResume() {
         super.onResume();
         resumed = true;
+        // the player asked for another server or episode: the page's own player may play again (it was held while the app's played)
+        if (pendingEpisode != null || pendingServer != null) web.evaluateJavascript("postMessage({fp:'release'},'*')", null);
         if (pendingEpisode != null) {
             int[] ep = pendingEpisode;
             pendingEpisode = null;
