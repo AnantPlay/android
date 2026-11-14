@@ -844,7 +844,6 @@ public class PlayerActivity extends Activity {
         return h <= 0 ? "" : h >= 2160 ? "4K" : h + "p";
     }
 
-    /** "1080p60": the height and, when the frame rate is known, the rate rounded (23.976 is 24, 59.94 is 60). */
     // ---- defaults: the tallest picture Auto plays, and the audio language ----
 
     static final int[] QUALITY_CAPS = {0, 2160, 1440, 1080, 720, 480};   // Settings, Highest quality; 0 = this device decides
@@ -891,6 +890,7 @@ public class PlayerActivity extends Activity {
         return false;
     }
 
+    /** "1080p60": the height and, when the frame rate is known, the rate rounded (23.976 is 24, 59.94 is 60). */
     static String qualityLabel(int h, float fps) {
         String base = heightLabel(h);
         return base.isEmpty() || fps <= 0 ? base : base + Math.round(fps);
@@ -1465,8 +1465,10 @@ public class PlayerActivity extends Activity {
         return out;
     }
 
+    static final java.util.regex.Pattern HEIGHT = java.util.regex.Pattern.compile("(\\d{3,4})p|\\b([48])K\\b", java.util.regex.Pattern.CASE_INSENSITIVE);
+
     static int height(String label) {
-        java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\d{3,4})p|\\b([48])K\\b").matcher(label);
+        java.util.regex.Matcher m = HEIGHT.matcher(label);
         return !m.find() ? Integer.MAX_VALUE : m.group(1) != null ? Integer.parseInt(m.group(1)) : m.group(2).equals("4") ? 2160 : 4320;
     }
 

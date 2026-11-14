@@ -167,13 +167,15 @@ public class SearchActivity extends Home {
     /** The whole list while the box is empty (an empty box filters nothing by itself). */
     void showRecent() {
         android.widget.AutoCompleteTextView ac = (android.widget.AutoCompleteTextView) box;
-        if (!ac.hasFocus() || ac.getText().length() > 0 || ac.getAdapter() == null || isFinishing()) return;
+        if (!ac.hasFocus() || ac.getText().length() > 0 || isFinishing()) return;
+        ac.setAdapter(recentAdapter());   // read again: a search made on this screen is in it
         ((android.widget.ArrayAdapter<?>) ac.getAdapter()).getFilter().filter(null, n -> { if (n > 0 && ac.hasFocus() && ac.getText().length() == 0 && !isFinishing()) ac.showDropDown(); });
     }
 
-    @Override protected void onPause() {
-        if (!isFinishing()) remember(query);   // left for a result (a title, a site, a channel), not Back
-        super.onPause();
+    /** Opening a result (a title, a site, a channel) keeps the search; a screen lock, Home or the voice dialog does not. */
+    @Override public void startActivity(android.content.Intent in) {
+        remember(query);
+        super.startActivity(in);
     }
 
     void showResults() {

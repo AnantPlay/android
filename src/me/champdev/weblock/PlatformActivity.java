@@ -13,6 +13,7 @@ import java.util.List;
  */
 public class PlatformActivity extends Home {
     String kind;   // movie | series: the list showing
+    boolean focusKind;   // a Movies / Series chip was just pressed: the remote stays on it
 
     @Override boolean tabs() { return false; }
 
@@ -27,7 +28,7 @@ public class PlatformActivity extends Home {
         if (s == null) { finish(); return; }
         if (kind == null) kind = "series".equals(getIntent().getStringExtra("kind")) ? "series" : "movie";
         final int at = built;
-        if (brand != null) { brandPage(id, brand, at); return; }
+        if (brand != null) { focusFirst = App.tv && !skipFocus; brandPage(id, brand, at); return; }
 
         TextView title = text(s[1], sp(26, 22), TEXT, true);
         title.setPadding(0, 0, 0, dp(6));
@@ -49,11 +50,12 @@ public class PlatformActivity extends Home {
         LinearLayout chips = new LinearLayout(this);
         chips.setPadding(0, u(10, 6), 0, u(6, 4));
         for (String k : new String[]{"movie", "series"}) {
-            TextView c = chip(v -> { kind = k; build(); });
+            TextView c = chip(v -> { kind = k; focusKind = true; build(); });
             c.setText(App.t(k.equals("movie") ? R.string.home_tab_movies : R.string.title_show));
             c.setTextColor(k.equals(kind) ? BG : TEXT);
             c.setBackground(rounded(k.equals(kind) ? TEXT : CARD, dp(22)));
             focusable(c, dp(22));
+            if (App.tv && focusKind && k.equals(kind)) c.post(c::requestFocus);
             chips.addView(c);
         }
         col.addView(chips);
@@ -61,7 +63,10 @@ public class PlatformActivity extends Home {
         holder.setOrientation(LinearLayout.VERTICAL);
         col.addView(holder);
         loadPage(kind, Catalog.PLATFORM + id, 0, holder, new Grid(holder, App.tv ? 8 : 3), built);
-        focusFirst = App.tv && firstCard == null && !skipFocus;   // the list is not here yet: showPage hands the remote over
+        focusFirst = App.tv && firstCard == null && !skipFocus && !focusKind;   // the list is not here yet: showPage hands the remote over
+        android.view.View first = firstCard;   // a list that was here at once: the remote starts on its first poster (not when coming back to this page)
+        if (App.tv && first != null && !skipFocus && !focusKind && !first.requestFocus()) col.post(first::requestFocus);
+        focusKind = false;
     }
 
     void brandPage(String platform, String brand, int at) {

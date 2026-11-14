@@ -13,13 +13,26 @@
   window.__apAuto = 1;
   if (window !== top && !/(^|\.)(youtube(-nocookie)?\.com|vimeo\.com|imdb\.com|dailymotion\.com)$/i.test(location.hostname)) return;
   let okAt = 0;
+  const stopped = new Set();   // in a frame: videos held back before the page said whether the user's press made this frame
   const ok = () => { okAt = Date.now(); };
   window.__apAllowPlay = ok;
+  // A frame made by a press on the page (its Trailer button) starts with no press of its own: it asks the page how long ago one was
+  addEventListener('message', e => {
+    const d = e.data;
+    if (!d || typeof d !== 'object') return;
+    if (d.fp === 'askedq' && e.source) e.source.postMessage({ fp: 'asked', age: Date.now() - okAt }, '*');
+    else if (d.fp === 'asked' && e.source === parent && d.age < 5000) {   // this frame is what the press asked for: start what was held
+      ok();
+      for (const v of stopped) if (v.isConnected) v.play().catch(() => { });
+      stopped.clear();
+    }
+  });
+  if (window !== top) parent.postMessage({ fp: 'askedq' }, '*');
   addEventListener('keydown', e => { if (e.isTrusted && /^(Enter| |MediaPlayPause|MediaPlay)$/.test(e.key)) ok(); }, true);
   for (const t of ['pointerdown', 'click', 'touchstart']) addEventListener(t, e => { if (e.isTrusted) ok(); }, true);
   const watching = () => /\/(watch|play|player|embed|stream)\b|[?&](play|autoplay)=(1|true)\b/i.test(location.pathname + location.search) && window === top;
   const unasked = v => (v.muted || v.defaultMuted || v.loop) && Date.now() - okAt > 2000 && !watching();
-  const stop = v => { v.autoplay = false; v.removeAttribute('autoplay'); v.pause(); };
+  const stop = v => { v.autoplay = false; v.removeAttribute('autoplay'); v.pause(); if (window !== top) stopped.add(v); };
   document.addEventListener('play', e => { if (e.target instanceof HTMLMediaElement && unasked(e.target)) stop(e.target); }, true);
   const play = HTMLMediaElement.prototype.play;
   HTMLMediaElement.prototype.play = function () {
@@ -49,6 +62,7 @@
     return false;
   };
   const click = e => {
+    if (window.__apAllowPlay) window.__apAllowPlay();   // the app pressing an episode, a server or Play: what starts next was asked for
     for (const t of ['pointerdown', 'mousedown', 'pointerup', 'mouseup'])
       e.dispatchEvent(new (t[0] === 'p' ? PointerEvent : MouseEvent)(t, { bubbles: true, cancelable: true, view: window }));
     e.click();
@@ -92,7 +106,8 @@
   //     (hidden entries can still be pressed from script)
   const headRe = /^(servers?|sources?|mirrors?|providers?)$/i, qualRe = /^(quality|qualities|resolution)$/i;
   // AUDIO (a language list: English, Hindi...) is its own group; SUBTITLES only marks where the audio list ends
-  const audioHeadRe = /^(audio|audio language|audio track|languages?|dub)$/i, subsHeadRe = /^(subtitles?|captions?|cc)$/i;
+  // (not a plain "Language" heading: that is often the site's own language switcher, whose links leave the page)
+  const audioHeadRe = /^(audio|audio languages?|audio tracks?|dubs?)$/i, subsHeadRe = /^(subtitles?|captions?|cc|languages?)$/i;
   // Text of an entry from its leaf pieces, so "1080p" + "Full HD" reads "1080p Full HD" (works while hidden)
   const textOf = e => [...e.querySelectorAll('*')].filter(c => !c.children.length).map(c => (c.textContent || '').trim()).filter(Boolean).join(' ') || (e.textContent || '').trim();
   // Just the name of an entry ("Lavender" of "Lavender No stream found")
@@ -108,12 +123,17 @@
       const t = (h.textContent || '').trim();
       const kind = headRe.test(t) ? 's' : qualRe.test(t) ? 'q' : audioHeadRe.test(t) ? 'a' : '';
       if (!kind || out[kind].length) continue;
+      // the other lists' headings (not this heading's own wrapper or inner element, which match the same word)
+      const others = heads.filter(o => o !== h && !o.contains(h) && !h.contains(o));
+      const after = (a, b) => !!(a.compareDocumentPosition(b) & 4);   // b comes after a
       for (let c = h.parentElement, i = 0; c && i < 3; c = c.parentElement, i++) {
-        // never a box that also holds the other list's heading: Quality and Server side by side, with only "Auto" under
-        // Quality (an adaptive stream), read Auto plus every server as qualities
-        if (heads.some(o => o !== h && c.contains(o))) break;
-        // an audio box can hold its subtitle buttons too ("External subtitles", "Upload", "Subtitle style"): languages only
-        const opts = [...c.querySelectorAll(optSel)].filter(e => leaf(e) && !e.contains(h) && !(kind === 'a' && /subtitle|caption|upload|style|sync/i.test(textOf(e))));
+        // A box that also holds another list's heading (Quality and Server side by side, or one under the other): only what
+        // sits between this heading and the next one. With just "Auto" under Quality (an adaptive stream) the whole box used
+        // to be read, Auto plus every server, as qualities
+        const shared = others.filter(o => c.contains(o)), next = shared.find(o => after(h, o));
+        const mine = e => !shared.length || (after(h, e) && (!next || after(e, next)));
+        // an audio box can hold its subtitle buttons too ("External subtitles", "Upload", "Subtitle style"): languages only, no links
+        const opts = [...c.querySelectorAll(optSel)].filter(e => leaf(e) && !e.contains(h) && mine(e) && !(kind === 'a' && (e.matches('a[href]') || /subtitle|caption|upload|style|sync/i.test(textOf(e)))));
         const names = opts.map(textOf);
         if (opts.length >= 2 && names.every(n => n.length >= 1 && n.length <= 30 && !junk.test(n))) {
           out[kind] = markOdd(opts.slice(0, 24).map((e, j) => ({ label: names[j], on: isOn(e), el: e })));
@@ -504,11 +524,14 @@
       const qs = h.q.length ? h.q : ns.q;
       items = sv.map(x => Object.assign(x, { kind: 's' })).concat(qs.map(x => Object.assign(x, { kind: 'q' })))
         .concat(ns.a.length >= 2 ? ns.a.map(x => Object.assign(x, { kind: 'a' })) : []);
-      if (items.length) up({ fp: 'reply', gen: d.gen, items: items.map((it, i) => ({ k: fid + ':' + i, label: it.label, on: it.on, kind: it.kind })) });
-      // Nothing yet on the page itself: a player that builds its menus a moment after its stream starts (Bingr) is looked at
-      // again, twice, before the app is told the scan is done and hands the stream over (it waits up to 3 s for this)
-      if (window === top && !items.length && (d.tries || 0) < 2) { await wait(800); postMessage({ fp: 'servers', gen: d.gen, tries: (d.tries || 0) + 1 }, '*'); return; }
-      if (window === top) down({ fp: 'servers', gen: d.gen, deep: sv.length < 2 });
+      const tries = d.tries || 0;
+      if (window === top && !tries) down({ fp: 'servers', gen: d.gen, deep: sv.length < 2 });   // the frames look once, right away
+      // Nothing yet, and the player is in the page itself: one that builds its menus a moment after its stream starts (Bingr) is
+      // looked at again, twice, before the app is told the scan is done and hands the stream over (it waits up to 3 s for this).
+      // A page whose player is in a frame has nothing to wait for here
+      if (window === top && !items.length && tries < 2 && document.querySelector('video')) { await wait(800); postMessage({ fp: 'servers', gen: d.gen, tries: tries + 1 }, '*'); return; }
+      // the page always answers, also with nothing: the lists of an earlier scan must not outlive it (their entries are gone)
+      if (items.length || window === top) up({ fp: 'reply', gen: d.gen, items: items.map((it, i) => ({ k: fid + ':' + i, label: it.label, on: it.on, kind: it.kind })) });
       if (window === top && window.AnantPlay) AnantPlay.scanDone();
     } else if (d.fp === 'episode') {
       down(d);
@@ -524,7 +547,7 @@
       // a Sub / Dub kept from an earlier look at this page: the list was read again since, so find it by its name
       if (String(d.k).startsWith(fid + ':') && d.kind === 'a' && (!it || it.label !== d.label)) {
         const b = comboBtn('a');
-        it = selects().a.find(x => x.label === d.label) || audioToggles().find(x => x.label === d.label) || (b ? { combo: b, kind: 'a', label: d.label } : null);
+        it = selects().a.find(x => x.label === d.label) || headed().a.find(x => x.label === d.label) || audioToggles().find(x => x.label === d.label) || (b ? { combo: b, kind: 'a', label: d.label } : null);
       }
       if (it) press(it);
       down(d);

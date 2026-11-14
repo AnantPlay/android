@@ -75,7 +75,11 @@ public class Home extends Activity {
 
     @Override protected void onCreate(Bundle state) {
         super.onCreate(state);
-        App.io.execute(() -> { java.io.File[] old = new java.io.File(getFilesDir(), "gif").listFiles(); if (old != null) for (java.io.File f : old) f.delete(); });   // the loading cats of older versions
+        App.io.execute(() -> {   // the loading cats of older versions: their folder goes, so this is one look from then on
+            java.io.File dir = new java.io.File(getFilesDir(), "gif");
+            java.io.File[] old = dir.listFiles();
+            if (old != null) { for (java.io.File f : old) f.delete(); dir.delete(); }
+        });
         android.view.ViewTreeObserver seen = getWindow().getDecorView().getViewTreeObserver();
         seen.addOnScrollChangedListener(this::checkLazy);
         seen.addOnGlobalLayoutListener(this::checkLazy);
@@ -981,7 +985,11 @@ public class Home extends Activity {
         TextView t = text(name, sp(17, 15), c, true);
         t.setGravity(Gravity.CENTER);
         t.setSingleLine();
-        t.setLayoutParams(cardParams(App.tv ? 160 : 124, App.tv ? 64 : 54));
+        LinearLayout.LayoutParams lp = cardParams(App.tv ? 160 : 124, App.tv ? 64 : 54);
+        lp.width = -2;   // as wide as its name ("National Geographic"), never narrower than the others
+        t.setMinWidth(dp(App.tv ? 160 : 124));
+        t.setPadding(dp(18), 0, dp(18), 0);
+        t.setLayoutParams(lp);
         t.setBackground(rounded(CARD, dp(14)));
         t.setTag("platform:" + name);
         focusable(t, dp(14));
