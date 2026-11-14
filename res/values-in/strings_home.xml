@@ -228,4 +228,5 @@
     <string name="home_searches_count">Pencarian tersimpan: %1$d</string>
     <string name="home_clear_searches_msg">Pencarian terbaru di bawah kotak pencarian dihapus.</string>
     <string name="home_searches_cleared">Riwayat pencarian dihapus</string>
+    <string name="home_platforms">Platform</string>
 </resources>

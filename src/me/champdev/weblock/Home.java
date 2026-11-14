@@ -419,6 +419,7 @@ public class Home extends Activity {
     void lowerHome(String movies, String shows, String anime) {
         // Each kind: what just came out, then what everyone watches (anime: Kitsu's trending)
         String fresh = App.t(R.string.home_new), popular = App.t(R.string.home_popular);
+        platformRow("movie");
         titleRow(movies, fresh, "movie", "genre=" + Catalog.NEW, 1);
         titleRow(movies, popular, "movie", "", 1);
         titleRow(shows, fresh, "series", "genre=" + Catalog.NEW, 2);
@@ -965,6 +966,29 @@ public class Home extends Activity {
         });
     }
 
+    /** The streaming services of the viewer's country as tiles: each opens what is popular on it (movies or series first, by `kind`) and its brands. */
+    void platformRow(String kind) {
+        col.addView(heading(App.t(R.string.home_platforms)));
+        LinearLayout row = row();
+        for (String[] s : Catalog.services(App.region()))
+            row.addView(platformTile(s[1], s[2], v -> startActivity(new Intent(this, PlatformActivity.class).putExtra("platform", s[0]).putExtra("kind", kind))));
+    }
+
+    /** A service or brand: its name in its own color (no logos: they are trademarks). */
+    View platformTile(String name, String color, View.OnClickListener click) {
+        int c = TEXT;
+        try { c = Color.parseColor(color); } catch (RuntimeException ignored) { }
+        TextView t = text(name, sp(17, 15), c, true);
+        t.setGravity(Gravity.CENTER);
+        t.setSingleLine();
+        t.setLayoutParams(cardParams(App.tv ? 160 : 124, App.tv ? 64 : 54));
+        t.setBackground(rounded(CARD, dp(14)));
+        t.setTag("platform:" + name);
+        focusable(t, dp(14));
+        t.setOnClickListener(click);
+        return t;
+    }
+
     /** Quiet blocks where a row's posters will be, so the page does not jump when they arrive. */
     void skeleton(LinearLayout row, int w) {
         for (int i = 0; i < 8; i++) {
@@ -1009,6 +1033,7 @@ public class Home extends Activity {
         firstCard = null;   // the remote opens on the first poster, not on a site or a language chip (focusContent)
         if (category.equals(Cats.ANIME)) titleRow(App.t(R.string.home_new_anime), "", "series", Catalog.NEW_ANIME, -1);
         String genre = fixedGenre.isEmpty() ? genres.getOrDefault(tab, firstList()) : fixedGenre;
+        if (fixedGenre.isEmpty()) platformRow(type);
         // The chips say which list this is; only the Anime tab has one fixed list, under its own heading
         col.addView(fixedGenre.isEmpty() ? genreChips() : heading(App.t(R.string.home_popular_animation)));
         LinearLayout holder = new LinearLayout(this);
@@ -1094,7 +1119,7 @@ public class Home extends Activity {
         holder.setTag(seen);
         for (Catalog.Title t : list) if (seen.add(t.id)) { grid.add(posterCard(t, grid.cell)); stepCards++; }
         if (firstCard != null) focusContent(firstCard);
-        if (list.isEmpty() || (!anime && list.size() < 20) || genre.equals(Catalog.NEW)) return;   // New is one list
+        if (list.isEmpty() || (!anime && list.size() < 20) || genre.equals(Catalog.NEW) || genre.startsWith(Catalog.PLATFORM)) return;   // New and a platform are one list
         // No "Load more" button: pressing it removed the card the remote was on, so the focus went back to the tabs
         Runnable next = () -> loadPage(type, genre, skip + (anime ? 20 : list.size()), holder, grid, id);
         if (stepCards < STEP_CARDS) { next.run(); return; }   // a source with pages of 20: several at once, the grid is compact

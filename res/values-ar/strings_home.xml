@@ -228,4 +228,5 @@
     <string name="home_searches_count">عمليات البحث المحفوظة: %1$d</string>
     <string name="home_clear_searches_msg">تُزال عمليات البحث الأخيرة التي تظهر تحت مربع البحث.</string>
     <string name="home_searches_cleared">تم مسح سجل البحث</string>
+    <string name="home_platforms">المنصات</string>
 </resources>

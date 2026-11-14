@@ -60,6 +60,11 @@ final class Catalog {
         if (extra.equals(TRENDING_ANIME)) return kitsu("kitsu-anime-trending", new int[]{0}, 0, false);
         if (extra.startsWith("genre=" + POPULAR_ANIME)) return popularAnime(extra, false);
         if (extra.startsWith("genre=" + NEW)) return extra.contains("skip=") ? new ArrayList<>() : fresh(type, false);   // one page only
+        if (extra.startsWith("genre=" + PLATFORM)) {   // one list of about 100 per service and kind, no pages
+            if (extra.contains("skip=")) return new ArrayList<>();
+            String text = get(platformPath(type, extra.substring(6 + PLATFORM.length())), true);
+            return text == null ? null : parseList(text, type);
+        }
         String text = get(path(type, extra), !extra.startsWith("search="));
         return text == null ? null : parseList(text, type);
     }
@@ -279,7 +284,8 @@ final class Catalog {
         if (extra.equals(TRENDING_ANIME)) return kitsu("kitsu-anime-trending", new int[]{0}, 0, true);
         if (extra.startsWith("genre=" + POPULAR_ANIME)) return popularAnime(extra, true);
         if (extra.startsWith("genre=" + NEW)) return extra.contains("skip=") ? new ArrayList<>() : fresh(type, true);
-        File f = file(path(type, extra));
+        if (extra.startsWith("genre=" + PLATFORM) && extra.contains("skip=")) return new ArrayList<>();
+        File f = file(extra.startsWith("genre=" + PLATFORM) ? platformPath(type, extra.substring(6 + PLATFORM.length())) : path(type, extra));
         if (!f.exists() || System.currentTimeMillis() - f.lastModified() > TTL) return null;
         try {
             return parseList(Sites.readAll(new java.io.FileInputStream(f)), type);
@@ -445,6 +451,79 @@ final class Catalog {
                 return null;
             }
         }
+    }
+
+    // ---- platforms and brands ----
+
+    /** What is popular on each streaming service: the Streaming Catalogs Stremio add-on (no key). Its lists are the same in every country. */
+    static final String PLATFORMS = "https://7a82163c306e-stremio-netflix-catalog-addon.baby-beamup.club";
+    static final String PLATFORM = "platform:";   // as a list's genre: "platform:dnp"
+    /** {id, name, color, countries it is shown in ("" = everywhere)}, in the order of the tiles. */
+    static final String[][] SERVICES = {
+        {"nfx", "Netflix", "#E50914", ""}, {"amp", "Prime Video", "#1A98FF", ""}, {"dnp", "Disney+", "#4E8DFF", ""},
+        {"jhs", "JioHotstar", "#E6399B", "IN"}, {"hbm", "HBO Max", "#9B6BFF", ""}, {"atp", "Apple TV+", "#FFFFFF", ""},
+        {"zee", "Zee5", "#B36BFF", "IN"}, {"hlu", "Hulu", "#1CE783", "US"}, {"pcp", "Peacock", "#FFD21F", "US"},
+        {"pmp", "Paramount+", "#3D8BFF", ""}, {"cru", "Crunchyroll", "#F47521", ""}};
+
+    /** The services to offer in a country ("" = no country set: the ones that are everywhere). */
+    static List<String[]> services(String region) {
+        List<String[]> out = new ArrayList<>();
+        for (String[] s : SERVICES) if (s[3].isEmpty() || s[3].equalsIgnoreCase(region)) out.add(s);
+        return out;
+    }
+
+    static String[] service(String id) {
+        for (String[] s : SERVICES) if (s[0].equals(id)) return s;
+        return null;
+    }
+
+    /** The add-on reads its settings from the address: base64 of "providers:rpdbKey:country:timestamp:0:0:". */
+    static String platformPath(String type, String id) {
+        String cfg = java.util.Base64.getEncoder().encodeToString((id + "::US:0:0:0:").getBytes(StandardCharsets.UTF_8));
+        return PLATFORMS + "/" + cfg.replace("=", "%3D").replace("+", "%2B").replace("/", "%2F") + "/catalog/" + type + "/" + id + ".json";
+    }
+
+    /** Brand lists inside a platform (Disney+ > Marvel, Pixar...), built weekly by the scraper repo's job. Our own metadata, no site links. */
+    static final String COLLECTIONS = "https://raw.githubusercontent.com/AnantPlay/scraper/main/collections.json";
+
+    static final class Brand {
+        String id = "", name = "", color = "";
+        final List<Title> titles = new ArrayList<>();
+    }
+
+    /** A platform's brands; empty when it has none or the file is not here yet. Network on the first call of every 6 hours: off the main thread. */
+    static List<Brand> brands(String platform) {
+        String text = get(COLLECTIONS, true);
+        return text == null ? new ArrayList<>() : parseBrands(text, platform);
+    }
+
+    static List<Brand> parseBrands(String json, String platform) {
+        List<Brand> out = new ArrayList<>();
+        try {
+            JSONObject p = new JSONObject(json).getJSONObject("platforms").optJSONObject(platform);
+            JSONArray brands = p == null ? null : p.optJSONArray("brands");
+            for (int i = 0; brands != null && i < brands.length(); i++) {
+                JSONObject o = brands.getJSONObject(i);
+                Brand b = new Brand();
+                b.id = o.optString("id");
+                b.name = o.optString("name");
+                b.color = o.optString("color", "#FFFFFF");
+                JSONArray titles = o.optJSONArray("titles");
+                for (int j = 0; titles != null && j < titles.length(); j++) {
+                    JSONObject x = titles.getJSONObject(j);
+                    Title t = new Title();
+                    t.id = x.optString("id");
+                    t.type = x.optString("type").equals("series") ? "series" : "movie";
+                    t.name = x.optString("name");
+                    t.year = x.optString("year");
+                    t.poster = x.optString("poster");
+                    t.tmdb = x.optString("tmdb");
+                    if (t.id.startsWith("tt") && !t.name.isEmpty()) b.titles.add(t);
+                }
+                if (!b.id.isEmpty() && !b.name.isEmpty() && !b.titles.isEmpty()) out.add(b);
+            }
+        } catch (JSONException ignored) { }
+        return out;
     }
 
     // ---- My list ----
