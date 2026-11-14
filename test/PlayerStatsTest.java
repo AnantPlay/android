@@ -30,6 +30,10 @@ public class PlayerStatsTest {
         check("vendor decoder is hardware", PlayerStats.software("c2.qti.avc.decoder"), false);
         check("samsung sw", PlayerStats.software("OMX.SEC.avc.sw.dec"), true);
         check("no colour info is SDR", PlayerStats.range(null), "SDR");
+        check("buffer: 80 MB heap", PlayerStats.bufferBytes(80L << 20), 20 << 20);
+        check("buffer: 512 MB heap", PlayerStats.bufferBytes(512L << 20), 128 << 20);
+        check("buffer: huge heap stops at the player's own", PlayerStats.bufferBytes(2048L << 20), 144 << 20);
+        check("buffer: tiny heap", PlayerStats.bufferBytes(32L << 20), 12 << 20);
         System.out.println(fails == 0 ? "ok" : fails + " failed");
         if (fails > 0) System.exit(1);
     }

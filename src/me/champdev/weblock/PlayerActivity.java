@@ -851,7 +851,7 @@ public class PlayerActivity extends Activity {
 
     /**
      * What this device plays smoothly: its screen's height, and no more than 1080p with under 3 GB of memory or a player heap under
-     * 256 MB (a 2.4 GB TV dropped frames at 4K), 720p under 1.5 GB.
+     * 256 MB (a 2.4 GB TV dropped frames at 4K), 720p under 1.5 GB or with a heap under 128 MB (an 80 MB one skipped frames at 1080p).
      */
     static int autoMaxHeight(Context c) {
         int screen = 0;
@@ -863,7 +863,7 @@ public class PlayerActivity extends Activity {
         android.app.ActivityManager.MemoryInfo mi = new android.app.ActivityManager.MemoryInfo();
         am.getMemoryInfo(mi);
         long mb = mi.totalMem >> 20;
-        int memory = am.isLowRamDevice() || mb < 1536 ? 720 : mb < 3072 || am.getMemoryClass() < 256 ? 1080 : Integer.MAX_VALUE;
+        int memory = am.isLowRamDevice() || mb < 1536 || am.getMemoryClass() < 128 ? 720 : mb < 3072 || am.getMemoryClass() < 256 ? 1080 : Integer.MAX_VALUE;
         return Math.min(screen > 0 ? screen : 1080, memory);
     }
 
@@ -1129,7 +1129,8 @@ public class PlayerActivity extends Activity {
             }
         };
         player = new ExoPlayer.Builder(this, renderers.setEnableDecoderFallback(true).setMediaCodecSelector(PlayerActivity::decoders))
-            .setMediaSourceFactory(new DefaultMediaSourceFactory(data)).setHandleAudioBecomingNoisy(true).build();
+            .setMediaSourceFactory(new DefaultMediaSourceFactory(data)).setHandleAudioBecomingNoisy(true)
+            .setLoadControl(new androidx.media3.exoplayer.DefaultLoadControl.Builder().setTargetBufferBytes(PlayerStats.bufferBytes(Runtime.getRuntime().maxMemory())).build()).build();
         player.setAudioAttributes(new androidx.media3.common.AudioAttributes.Builder().setUsage(C.USAGE_MEDIA)
             .setContentType(C.AUDIO_CONTENT_TYPE_MOVIE).build(), true);
         player.setVideoSurfaceView(surface);
