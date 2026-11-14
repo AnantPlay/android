@@ -229,4 +229,6 @@
     <string name="home_clear_searches_msg">The recent searches under the search box are removed.</string>
     <string name="home_searches_cleared">Search history cleared</string>
     <string name="home_platforms">Platforms</string>
+    <string name="home_all">All</string>
+    <string name="home_animation">Animation</string>
 </resources>

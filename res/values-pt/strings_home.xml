@@ -229,4 +229,6 @@
     <string name="home_clear_searches_msg">As buscas recentes abaixo da caixa de busca são removidas.</string>
     <string name="home_searches_cleared">Histórico de busca limpo</string>
     <string name="home_platforms">Plataformas</string>
+    <string name="home_all">Tudo</string>
+    <string name="home_animation">Animação</string>
 </resources>

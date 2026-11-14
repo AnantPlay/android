@@ -229,4 +229,6 @@
     <string name="home_clear_searches_msg">Se quitan las búsquedas recientes que aparecen bajo el cuadro de búsqueda.</string>
     <string name="home_searches_cleared">Historial de búsqueda borrado</string>
     <string name="home_platforms">Plataformas</string>
+    <string name="home_all">Todo</string>
+    <string name="home_animation">Animación</string>
 </resources>

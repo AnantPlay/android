@@ -982,13 +982,13 @@ public class Home extends Activity {
     View platformTile(String name, String color, View.OnClickListener click) {
         int c = TEXT;
         try { c = Color.parseColor(color); } catch (RuntimeException ignored) { }
-        TextView t = text(name, sp(17, 15), c, true);
+        TextView t = text(name, sp(20, 17), c, true);
         t.setGravity(Gravity.CENTER);
         t.setSingleLine();
-        LinearLayout.LayoutParams lp = cardParams(App.tv ? 160 : 124, App.tv ? 64 : 54);
+        LinearLayout.LayoutParams lp = cardParams(App.tv ? 200 : 148, App.tv ? 84 : 66);
         lp.width = -2;   // as wide as its name ("National Geographic"), never narrower than the others
-        t.setMinWidth(dp(App.tv ? 160 : 124));
-        t.setPadding(dp(18), 0, dp(18), 0);
+        t.setMinWidth(dp(App.tv ? 200 : 148));
+        t.setPadding(dp(22), 0, dp(22), 0);
         t.setLayoutParams(lp);
         t.setBackground(rounded(CARD, dp(14)));
         t.setTag("platform:" + name);

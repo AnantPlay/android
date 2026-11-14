@@ -229,4 +229,6 @@
     <string name="home_clear_searches_msg">Die letzten Suchen unter dem Suchfeld werden entfernt.</string>
     <string name="home_searches_cleared">Suchverlauf gelöscht</string>
     <string name="home_platforms">Plattformen</string>
+    <string name="home_all">Alle</string>
+    <string name="home_animation">Animation</string>
 </resources>

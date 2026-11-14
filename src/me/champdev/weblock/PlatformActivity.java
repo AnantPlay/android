@@ -9,11 +9,13 @@ import java.util.List;
 
 /**
  * One streaming service: its brands as tiles (Disney+ > Marvel, Pixar...), then what is popular on it, movies or series.
- * Opened with "brand" it is that brand's page: all its movies and series, newest first.
+ * Opened with "brand" it is that brand's page: all its movies and series, newest first, with chips that narrow it
+ * (Marvel: All, MCU, Animation, Movies, Series).
  */
 public class PlatformActivity extends Home {
     String kind;   // movie | series: the list showing
     boolean focusKind;   // a Movies / Series chip was just pressed: the remote stays on it
+    String filter = "";   // brand page: "" all, movie | series, or one of the brand's groups ("mcu")
 
     @Override boolean tabs() { return false; }
 
@@ -82,17 +84,49 @@ public class PlatformActivity extends Home {
                 if (b == null) { col.addView(note(App.t(R.string.home_catalog_offline))); return; }
                 title.setText(b.name);
                 try { title.setTextColor(android.graphics.Color.parseColor(b.color)); } catch (RuntimeException ignored) { }
-                for (String k : new String[]{"movie", "series"}) {
-                    List<Catalog.Title> list = new ArrayList<>();
-                    for (Catalog.Title t : b.titles) if (t.type.equals(k)) list.add(t);
-                    if (list.isEmpty()) continue;
-                    list.sort((x, y) -> y.year.compareTo(x.year));   // newest first; the job lists them so already, this keeps it true
-                    col.addView(heading(App.t(k.equals("movie") ? R.string.home_tab_movies : R.string.title_show), String.valueOf(list.size())));
-                    Grid grid = new Grid(col, App.tv ? 8 : 3);
-                    for (Catalog.Title t : list) grid.add(posterCard(t, grid.cell));
-                }
+                LinearLayout body = new LinearLayout(this);
+                body.setOrientation(LinearLayout.VERTICAL);
+                col.addView(body);
+                showBrand(b, body, false);
                 if (App.tv && firstCard != null && !skipFocus) focusContent(firstCard);
             });
         });
+    }
+
+    /** The chips, then the titles the picked one keeps: movies, then series. A chip that was just pressed keeps the remote. */
+    void showBrand(Catalog.Brand b, LinearLayout body, boolean pressed) {
+        body.removeAllViews();
+        firstCard = null;
+        List<String[]> chips = new ArrayList<>();   // {filter, label}
+        chips.add(new String[]{"", App.t(R.string.home_all)});
+        for (String[] g : b.groups) chips.add(new String[]{g[0], g[0].equals("animation") ? App.t(R.string.home_animation) : g[1]});
+        boolean movies = false, series = false;
+        for (Catalog.Title t : b.titles) { if (t.series()) series = true; else movies = true; }
+        if (movies && series) {
+            chips.add(new String[]{"movie", App.t(R.string.home_tab_movies)});
+            chips.add(new String[]{"series", App.t(R.string.title_show)});
+        }
+        if (chips.size() > 1) {
+            LinearLayout row = row(body);
+            for (String[] c : chips) {
+                boolean on = c[0].equals(filter);
+                TextView chip = chip(v -> { filter = c[0]; showBrand(b, body, true); });
+                chip.setText(c[1]);
+                chip.setTextColor(on ? BG : TEXT);
+                chip.setBackground(rounded(on ? TEXT : CARD, dp(22)));
+                focusable(chip, dp(22));
+                if (App.tv && pressed && on) chip.post(chip::requestFocus);
+                row.addView(chip);
+            }
+        }
+        for (String k : new String[]{"movie", "series"}) {
+            List<Catalog.Title> list = new ArrayList<>();
+            for (Catalog.Title t : b.titles) if (t.type.equals(k) && (filter.isEmpty() || filter.equals(k) || t.tagged(filter))) list.add(t);
+            if (list.isEmpty()) continue;
+            list.sort((x, y) -> y.year.compareTo(x.year));   // newest first; the job lists them so already, this keeps it true
+            body.addView(heading(App.t(k.equals("movie") ? R.string.home_tab_movies : R.string.title_show), String.valueOf(list.size())));
+            Grid grid = new Grid(body, App.tv ? 8 : 3);
+            for (Catalog.Title t : list) grid.add(posterCard(t, grid.cell));
+        }
     }
 }

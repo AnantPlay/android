@@ -45,9 +45,12 @@ final class Catalog {
         String trailer = "";   // YouTube id (detail page)
         String released = "";   // "2026-10-02T00:00:00.000Z": cinema release for a movie, first episode for a series
         boolean anime;   // set by search, from Kitsu's anime list
+        String tags = "";   // a brand list's groups this title is in, space-separated ("mcu animation")
         final List<Episode> episodes = new ArrayList<>();
 
         boolean series() { return type.equals("series"); }
+
+        boolean tagged(String tag) { return (" " + tags + " ").contains(" " + tag + " "); }
 
         String kind() { return anime ? "Anime" : series() ? "TV Series" : "Movie"; }
     }
@@ -488,6 +491,7 @@ final class Catalog {
 
     static final class Brand {
         String id = "", name = "", color = "";
+        final List<String[]> groups = new ArrayList<>();   // {id, name}: what its page can be narrowed to (Marvel: MCU, Animation)
         final List<Title> titles = new ArrayList<>();
     }
 
@@ -508,6 +512,11 @@ final class Catalog {
                 b.id = o.optString("id");
                 b.name = o.optString("name");
                 b.color = o.optString("color", "#FFFFFF");
+                JSONArray groups = o.optJSONArray("groups");
+                for (int j = 0; groups != null && j < groups.length(); j++) {
+                    JSONObject g = groups.getJSONObject(j);
+                    if (!g.optString("id").isEmpty() && !g.optString("name").isEmpty()) b.groups.add(new String[]{g.optString("id"), g.optString("name")});
+                }
                 JSONArray titles = o.optJSONArray("titles");
                 for (int j = 0; titles != null && j < titles.length(); j++) {
                     JSONObject x = titles.getJSONObject(j);
@@ -518,6 +527,8 @@ final class Catalog {
                     t.year = x.optString("year");
                     t.poster = x.optString("poster");
                     t.tmdb = x.optString("tmdb");
+                    JSONArray tags = x.optJSONArray("tags");
+                    if (tags != null) t.tags = tags.join(" ").replace("\"", "");
                     if (t.id.startsWith("tt") && !t.name.isEmpty()) b.titles.add(t);
                 }
                 if (!b.id.isEmpty() && !b.name.isEmpty() && !b.titles.isEmpty()) out.add(b);
