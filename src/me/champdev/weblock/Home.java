@@ -75,7 +75,7 @@ public class Home extends Activity {
 
     @Override protected void onCreate(Bundle state) {
         super.onCreate(state);
-        GifView.prefetch();   // the loading backdrop's pictures, fetched once
+        App.io.execute(() -> { java.io.File[] old = new java.io.File(getFilesDir(), "gif").listFiles(); if (old != null) for (java.io.File f : old) f.delete(); });   // the loading cats of older versions
         android.view.ViewTreeObserver seen = getWindow().getDecorView().getViewTreeObserver();
         seen.addOnScrollChangedListener(this::checkLazy);
         seen.addOnGlobalLayoutListener(this::checkLazy);

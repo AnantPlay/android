@@ -136,7 +136,6 @@ public class WebActivity extends Activity {
     int[] pendingEpisode;      // {season, episode} picked in the player's Episodes list, opened when the page is back
     View opening;              // the backdrop (poster, title, what the app is doing now) while it drives the page
     TextView openingText;
-    GifView openingGif;
     boolean pageError;         // the page just loaded was an error page
     boolean okOnScreen;        // an OK press began while the backdrop was up: its release takes the backdrop down
     boolean dismissed;         // you looked at the page (or it gave up, or the player took over): the backdrop stays down until the app starts something new
@@ -361,12 +360,9 @@ public class WebActivity extends Activity {
         head.setPadding(Home.dp(this, 24), 0, Home.dp(this, 24), Home.dp(this, 20));
         head.setText(name == null || name.isEmpty() ? String.valueOf(site) : name);
         wait.addView(head);
-        ProgressBar spin = new ProgressBar(this);   // until the picture of the state is here
+        ProgressBar spin = new ProgressBar(this);
         spin.setIndeterminateTintList(ColorStateList.valueOf(Home.ACCENT));
         wait.addView(spin, new LinearLayout.LayoutParams(Home.dp(this, 44), Home.dp(this, 44)));
-        openingGif = new GifView(this, spin);
-        int box = Home.dp(this, App.tv ? 190 : 140);   // every cat the same square, whatever the picture's shape
-        wait.addView(openingGif, new LinearLayout.LayoutParams(box, box));
         openingText = new TextView(this);
         openingText.setTextColor(Home.TEXT);
         openingText.setTextSize(App.tv ? 20 : 17);
@@ -384,7 +380,7 @@ public class WebActivity extends Activity {
         root.addView(wait, new FrameLayout.LayoutParams(-1, -1));
         // Anything the app drives from the start (the title's own page, a search for it, an episode) is behind the backdrop from the first frame
         if (playAfterLoad || pendingQuery != null || (show != null && show.series() && getIntent().getIntExtra("episode", 0) > 0))
-            step("load", App.t(Warp.state == Warp.State.CONNECTING ? R.string.web_connecting_warp : R.string.web_step_loading), null);
+            step(App.t(Warp.state == Warp.State.CONNECTING ? R.string.web_connecting_warp : R.string.web_step_loading), null);
         if (!App.tv) addHomeButton(root);   // top right, where the player has it too; a TV has Menu, Back to home
         setContentView(root);
         // 90/120 Hz phones would repaint an animated page twice as often for no visible gain: ask for 60 (less heat)
@@ -471,11 +467,11 @@ public class WebActivity extends Activity {
                 if (spatnav != null && !WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) v.evaluateJavascript(spatnav, null);
                 if (pointer != null && pointer.on) v.evaluateJavascript("window.__fpClear&&__fpClear()", null);
                 String q = pendingQuery;
-                if (q != null && searchTries++ < 4) { step("load", App.t(R.string.web_step_search), null); autosearch(v, q, false); }
-                else if (pendingPick != null && searchTries++ < 8) { step("load", App.t(R.string.web_step_search), null); autosearch(v, pendingPick, true); }   // a results page that loaded anew
+                if (q != null && searchTries++ < 4) { step(App.t(R.string.web_step_search), null); autosearch(v, q, false); }
+                else if (pendingPick != null && searchTries++ < 8) { step(App.t(R.string.web_step_search), null); autosearch(v, pendingPick, true); }   // a results page that loaded anew
                 if (playAfterLoad) {
                     playAfterLoad = false;
-                    step("load", App.t(R.string.web_step_play), sorry());
+                    step(App.t(R.string.web_step_play), sorry());
                     // twice: single-page players set themselves up a few seconds after the load; never once a stream is found
                     for (long at : new long[]{2500, 6000}) App.main.postDelayed(() -> { if (!sniffer.has() && !isFinishing()) v.evaluateJavascript("postMessage({fp:'play'},'*')", null); }, at);
                 }
@@ -522,7 +518,7 @@ public class WebActivity extends Activity {
         if (Warp.state == Warp.State.CONNECTING) status.setText(App.t(R.string.web_connecting_warp));
         Warp.whenSettled(() -> {
             status.setVisibility(View.GONE);
-            if (opening.getVisibility() == View.VISIBLE) step("load", App.t(R.string.web_step_loading), null);
+            if (opening.getVisibility() == View.VISIBLE) step(App.t(R.string.web_step_loading), null);
             if (Warp.state == Warp.State.FAILED) toast(App.t(R.string.web_warp_failed));
             // The page loads once the route is really set (it is set here, not at app start)
             Warp.route(!Warp.bypassed(siteOf(String.valueOf(Uri.parse(siteUrl).getHost()))), () -> {
@@ -559,7 +555,7 @@ public class WebActivity extends Activity {
         if (!resumed || isFinishing()) return;
         if (!App.prefs.getBoolean("native", true)) { hideOpening(); web.evaluateJavascript(CHIP, null); return; }
         if (holdForEpisode) return;   // picking the episode on the page: its stream comes next
-        step("done", App.t(R.string.web_step_done), sorry());   // the stream is found: the player is next
+        step(App.t(R.string.web_step_done), sorry());   // the stream is found: the player is next
         if (scanDone) playNative(); else { handoffWaiting = true; App.main.postDelayed(waitedHandoff, 3000); }
     }
 
@@ -637,7 +633,7 @@ public class WebActivity extends Activity {
     void openEpisode(int season, int episode, String fallback) {
         getIntent().putExtra("season", season).putExtra("episode", episode);
         dismissed = false;   // a new episode: the backdrop again
-        step("load", App.t(R.string.web_opening_episode, season, episode), App.t(R.string.web_pick_episode, season, episode));
+        step(App.t(R.string.web_opening_episode, season, episode), App.t(R.string.web_pick_episode, season, episode));
         Catalog.Title t = show;
         String here = web.getUrl(), hereTitle = String.valueOf(web.getTitle());   // read here: the lookup below runs off the main thread
         String audio = App.prefs.getString("siteAudio:" + siteKey(), "").toLowerCase(java.util.Locale.ROOT).contains("dub") ? "dub" : "sub";
@@ -852,7 +848,7 @@ public class WebActivity extends Activity {
         @JavascriptInterface public void episodeFound() {
             episodeFound = true;
             runOnUiThread(() -> {
-                step("load", App.t(R.string.web_step_play), sorry());
+                step(App.t(R.string.web_step_play), sorry());
                 if (!holdForEpisode) return;
                 holdForEpisode = false;
                 sniffer.switching();   // the first episode's stream is not the one: wait for the picked one's
@@ -882,7 +878,7 @@ public class WebActivity extends Activity {
                 int[] ep = episodeAfterLoad;
                 if (ep == null) { hideOpening(); return; }   // the title's page: the rest is yours
                 episodeAfterLoad = null;
-                step("load", App.t(R.string.web_opening_episode, ep[0], ep[1]), App.t(R.string.web_pick_episode, ep[0], ep[1]));
+                step(App.t(R.string.web_opening_episode, ep[0], ep[1]), App.t(R.string.web_pick_episode, ep[0], ep[1]));
                 App.main.postDelayed(() -> pressEpisode(ep[0], ep[1]), 4000);
             });
         }
@@ -1051,9 +1047,8 @@ public class WebActivity extends Activity {
      * The backdrop goes up (or says the next thing the app is doing) and the 40 s wait starts over; if nothing moves on it comes down
      * by itself, with `giveUp` as a note. Not after you looked at the page, until the app starts something new.
      */
-    void step(String gif, String text, String giveUp) {
+    void step(String text, String giveUp) {
         if (dismissed || opening == null) return;
-        if (!gif.equals(openingGif.want)) openingGif.play(gif);
         openingText.setText(text);
         opening.setVisibility(View.VISIBLE);
         App.main.removeCallbacks(openingGiveUp);
@@ -1061,11 +1056,10 @@ public class WebActivity extends Activity {
         App.main.postDelayed(openingGiveUp, 40000);
     }
 
-    /** Stuck: the staring cat says so for a few seconds, then the page is yours (the note is also a toast when no backdrop is up). */
+    /** Stuck: the backdrop says so for a few seconds, then the page is yours (the note is also a toast when no backdrop is up). */
     void fail(String note) {
         if (isFinishing()) return;
         if (opening.getVisibility() != View.VISIBLE) { if (note != null) toast(note); return; }
-        openingGif.play("fail");
         openingText.setText(note != null ? note : App.t(R.string.web_step_failed));
         App.main.removeCallbacks(openingGiveUp);
         openingGiveUp = this::hideOpening;
@@ -1152,7 +1146,7 @@ public class WebActivity extends Activity {
             String k = pendingServer;
             pendingServer = null;
             dismissed = false;
-            step("load", App.t(R.string.web_step_play), null);
+            step(App.t(R.string.web_step_play), null);
             sniffer.fresh();
             web.evaluateJavascript(clickJs(k), null);
         }

@@ -63,7 +63,7 @@ Streaming sites are built for a desktop browser with a mouse. On a TV remote the
 - **Simkl** and **PunchPlay** tracking (optional): what you watch is tracked there, titles you finish are marked watched
 - Phone: **picture in picture**, hold the right or left side for **2x**, follows the rotation lock with a Full screen button; swipe for brightness and volume, double-tap to skip 10 seconds
 - **Back to Home in one step** from the player (phone: house button, TV: More, Home) and from a website (phone: a house at the top right, TV: Menu, Back to home), or by **holding Back for 3 seconds** on any screen
-- A translucent **loading screen** (title, current step, a cat that spins while it works, jumps when the stream is found and stares when it gets stuck) while the app drives a site, until the player is up; tap it or press Back to see the page
+- A translucent **loading screen** (title, current step and a spinner) while the app drives a site, until the player is up; tap it or press Back to see the page
 
 **Downloads**
 - A **Download** button in the player saves the movie, series or anime you are watching: it asks first (file name, folder), names the file like `Title.2024.1080p.AnantPlay.mp4`, and keeps going in the background with progress in a notification
