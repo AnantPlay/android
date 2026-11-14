@@ -97,12 +97,19 @@
   const firstText = e => [...e.querySelectorAll('*')].filter(c => !c.children.length).map(c => (c.textContent || '').trim()).find(Boolean) || (e.textContent || '').trim();
   const headed = () => {
     const out = { s: [], q: [] };
-    for (const h of document.querySelectorAll('*')) {
-      if (h.children.length > 1 || h.closest(optSel)) continue;
+    const heads = [...document.querySelectorAll('*')].filter(h => {
+      if (h.children.length > 1 || h.closest(optSel)) return false;
       const t = (h.textContent || '').trim();
-      const kind = headRe.test(t) ? 's' : qualRe.test(t) ? 'q' : '';
-      if (!kind || out[kind].length) continue;
+      return headRe.test(t) || qualRe.test(t);
+    });
+    for (const h of heads) {
+      const t = (h.textContent || '').trim();
+      const kind = headRe.test(t) ? 's' : 'q';
+      if (out[kind].length) continue;
       for (let c = h.parentElement, i = 0; c && i < 3; c = c.parentElement, i++) {
+        // never a box that also holds the other list's heading: Quality and Server side by side, with only "Auto" under
+        // Quality (an adaptive stream), read Auto plus every server as qualities
+        if (heads.some(o => o !== h && c.contains(o))) break;
         const opts = [...c.querySelectorAll(optSel)].filter(e => leaf(e) && !e.contains(h));
         const names = opts.map(textOf);
         if (opts.length >= 2 && names.every(n => n.length >= 1 && n.length <= 30 && !junk.test(n))) {

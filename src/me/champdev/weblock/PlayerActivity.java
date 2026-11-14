@@ -1439,8 +1439,22 @@ public class PlayerActivity extends Activity {
     // Quality: the stream's own choices if it has several, else the page's quality list (a page that serves one playlist per quality)
     void pickQuality() {
         WebActivity page = WebActivity.active;
-        if (page != null && !page.qualities.isEmpty() && countVideo(player.getCurrentTracks()) <= 1) pickFromPage(page.qualities, App.t(R.string.player_quality), App.t(R.string.player_no_quality));
+        if (page != null && !page.qualities.isEmpty() && countVideo(player.getCurrentTracks()) <= 1) pickFromPage(byHeight(page.qualities), App.t(R.string.player_quality), App.t(R.string.player_no_quality));
         else pickVideo(player.getCurrentTracks());
+    }
+
+    /** A page's qualities highest first ("Auto" and other words on top): sites list them in whatever order their menu has right now. */
+    static Map<String, String[]> byHeight(Map<String, String[]> list) {
+        List<Map.Entry<String, String[]>> all = new ArrayList<>(list.entrySet());
+        all.sort((a, b) -> Integer.compare(height(b.getValue()[0]), height(a.getValue()[0])));
+        Map<String, String[]> out = new java.util.LinkedHashMap<>();
+        for (Map.Entry<String, String[]> e : all) out.put(e.getKey(), e.getValue());
+        return out;
+    }
+
+    static int height(String label) {
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\d{3,4})p|\\b([48])K\\b").matcher(label);
+        return !m.find() ? Integer.MAX_VALUE : m.group(1) != null ? Integer.parseInt(m.group(1)) : m.group(2).equals("4") ? 2160 : 4320;
     }
 
     void pickFromPage(Map<String, String[]> list, String title, String none) {
