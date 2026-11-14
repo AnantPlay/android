@@ -464,16 +464,17 @@ final class Catalog {
     static final String PLATFORMS = "https://7a82163c306e-stremio-netflix-catalog-addon.baby-beamup.club";
     static final String PLATFORM = "platform:";   // as a list's genre: "platform:dnp"
     /** {id, name, color, countries it is shown in ("" = everywhere)}, in the order of the tiles. */
+    // India: Disney+ and Hotstar are one service, so one tile there (it carries Disney+'s brands)
     static final String[][] SERVICES = {
-        {"nfx", "Netflix", "#E50914", ""}, {"amp", "Prime Video", "#1A98FF", ""}, {"dnp", "Disney+", "#4E8DFF", ""},
-        {"jhs", "JioHotstar", "#E6399B", "IN"}, {"hbm", "HBO Max", "#9B6BFF", ""}, {"atp", "Apple TV+", "#FFFFFF", ""},
+        {"nfx", "Netflix", "#E50914", ""}, {"amp", "Prime Video", "#1A98FF", ""}, {"dnp", "Disney+", "#4E8DFF", "!IN"},
+        {"jhs", "Hotstar+", "#E6399B", "IN"}, {"hbm", "HBO Max", "#9B6BFF", ""}, {"atp", "Apple TV+", "#FFFFFF", ""},
         {"zee", "Zee5", "#B36BFF", "IN"}, {"hlu", "Hulu", "#1CE783", "US"}, {"pcp", "Peacock", "#FFD21F", "US"},
         {"pmp", "Paramount+", "#3D8BFF", ""}, {"cru", "Crunchyroll", "#F47521", ""}};
 
-    /** The services to offer in a country ("" = no country set: the ones that are everywhere). */
+    /** The services to offer in a country ("" = no country set: the ones that are everywhere). A service's "IN" = only there, "!IN" = not there. */
     static List<String[]> services(String region) {
         List<String[]> out = new ArrayList<>();
-        for (String[] s : SERVICES) if (s[3].isEmpty() || s[3].equalsIgnoreCase(region)) out.add(s);
+        for (String[] s : SERVICES) if (s[3].isEmpty() || (s[3].startsWith("!") ? !s[3].substring(1).equalsIgnoreCase(region) : s[3].equalsIgnoreCase(region))) out.add(s);
         return out;
     }
 
@@ -495,18 +496,60 @@ final class Catalog {
         String id = "", name = "", color = "";
         final List<String[]> groups = new ArrayList<>();   // {id, name}: what its page can be narrowed to (Marvel: MCU, Animation)
         final List<Title> titles = new ArrayList<>();
+
+        /**
+         * One of the page's rows, of one kind ("" both, movie | series): trending, popular, rated (only titles enough people voted
+         * on), movie | series, or a group ("mcu"); the last three newest first.
+         */
+        List<Title> list(String kind, String row) {
+            List<Title> out = new ArrayList<>();
+            for (Title t : titles) {
+                if (!kind.isEmpty() && !kind.equals(t.type)) continue;
+                boolean in;
+                switch (row) {
+                    case "trending": case "popular": in = true; break;
+                    case "rated": in = t.votes >= 200; break;
+                    case "movie": case "series": in = t.type.equals(row); break;
+                    default: in = t.tagged(row);
+                }
+                if (in) out.add(t);
+            }
+            switch (row) {
+                case "trending": out.sort((x, y) -> Float.compare(y.pop, x.pop)); break;
+                case "popular": out.sort((x, y) -> y.votes - x.votes); break;
+                case "rated": out.sort((x, y) -> Float.compare(number(y.rating), number(x.rating))); break;
+                default: out.sort((x, y) -> y.year.compareTo(x.year));   // the job lists them so already, this keeps it true
+            }
+            return out;
+        }
+
+        static float number(String s) {
+            try { return Float.parseFloat(s); } catch (NumberFormatException e) { return 0; }
+        }
     }
 
     /** A platform's brands; empty when it has none or the file is not here yet. Network on the first call of every 6 hours: off the main thread. */
     static List<Brand> brands(String platform) {
         String text = get(COLLECTIONS, true);
-        return text == null ? new ArrayList<>() : parseBrands(text, platform);
+        return text == null ? new ArrayList<>() : parseBrands(text, platform.equals("jhs") ? "dnp" : platform);
     }
 
+    static String brandsText;   // the file as it was read last, parsed once: Home asks for several of its lists in a row
+    static JSONObject brandsRoot;
+
+    static synchronized JSONObject brandsRoot(String json) throws JSONException {
+        if (!json.equals(brandsText)) {
+            brandsRoot = new JSONObject(json);
+            brandsText = json;
+        }
+        return brandsRoot;
+    }
+
+    /** `platform` is a service ("dnp") or one of the file's other lists of brands ("studios", "kids"). */
     static List<Brand> parseBrands(String json, String platform) {
         List<Brand> out = new ArrayList<>();
         try {
-            JSONObject p = new JSONObject(json).getJSONObject("platforms").optJSONObject(platform);
+            JSONObject p = brandsRoot(json).getJSONObject("platforms").optJSONObject(platform);
             JSONArray brands = p == null ? null : p.optJSONArray("brands");
             for (int i = 0; brands != null && i < brands.length(); i++) {
                 JSONObject o = brands.getJSONObject(i);

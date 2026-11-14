@@ -89,7 +89,17 @@ public class Home extends Activity {
         ScrollView sv = page = new ScrollView(this);
         sv.setBackgroundColor(BG);
         sv.setFillViewport(true);
-        col = new LinearLayout(this);
+        col = new LinearLayout(this) {
+            /** RIGHT at the end of a row stays there: the nearest thing further right sits in another row (the remote jumped up to a chip). */
+            @Override public View focusSearch(View focused, int direction) {
+                View next = super.focusSearch(focused, direction);
+                if (direction != View.FOCUS_RIGHT || next == null || focused == null || !inside(next, this)) return next;
+                int[] a = new int[2], b = new int[2];
+                focused.getLocationOnScreen(a);
+                next.getLocationOnScreen(b);
+                return b[1] < a[1] + focused.getHeight() && a[1] < b[1] + next.getHeight() ? next : focused;
+            }
+        };
         col.setOrientation(LinearLayout.VERTICAL);
         // One margin on every side; rows get a little slack past it so the grown focus ring never clips
         side = u(16, 10);
@@ -432,8 +442,7 @@ public class Home extends Activity {
         List<Catalog.Title> mine = Catalog.mine();
         if (!mine.isEmpty()) {
             col.addView(heading(App.t(R.string.home_my_list)));
-            LinearLayout row = row();
-            for (Catalog.Title t : mine) row.addView(posterCard(t, posterW()));
+            posterRow(row(), App.t(R.string.home_my_list), mine);
         }
         String movies = App.t(R.string.home_tab_movies), shows = App.t(R.string.home_tab_tv), anime = App.t(R.string.home_tab_anime);
         // The viewer's own country first (its languages' most popular titles), then the world's
@@ -453,10 +462,15 @@ public class Home extends Activity {
         // Each kind: what just came out, then what everyone watches (anime: Kitsu's trending)
         String fresh = App.t(R.string.home_new), popular = App.t(R.string.home_popular);
         platformRow("movie");
+        brandRow(App.t(R.string.home_studios), "studios", null);
         titleRow(movies, fresh, "movie", "genre=" + Catalog.NEW, 1);
         titleRow(movies, popular, "movie", "", 1);
         titleRow(shows, fresh, "series", "genre=" + Catalog.NEW, 2);
         titleRow(shows, popular, "series", "", 2);
+        String kids = App.t(R.string.home_kids);   // the brands children know, then family titles (More opens the tab on its Family chip)
+        brandRow(kids, null, KIDS);
+        titleRow(kids, movies, "movie", "genre=Family", 1);
+        titleRow(kids, shows, "series", "genre=Family", 2);
         titleRow(anime, fresh, "series", Catalog.NEW_ANIME, 4);
         titleRow(anime, popular, "series", Catalog.TRENDING_ANIME, 4);
 
@@ -1029,13 +1043,39 @@ public class Home extends Activity {
             row.addView(platformTile(s[1], s[2], v -> startActivity(new Intent(this, PlatformActivity.class).putExtra("platform", s[0]).putExtra("kind", kind))));
     }
 
+    /** The Kids tiles: {list, brand} in the brand file. */
+    static final String[][] KIDS = {{"dnp", "disney"}, {"dnp", "pixar"}, {"studios", "dreamworks"}, {"studios", "illumination"}, {"kids", "nickelodeon"}, {"kids", "cartoonnetwork"}};
+
+    /**
+     * A heading and a row of brand tiles: every brand of one of the brand file's lists, or the picked ones. The file arrives a moment
+     * later (kept for 6 hours), so the row keeps its room; without any brand the heading and the row go.
+     */
+    void brandRow(String name, String list, String[][] only) {
+        View h = heading(name);
+        col.addView(h);
+        LinearLayout row = row();
+        row.setMinimumHeight(dp(App.tv ? 64 : 54));
+        final int id = built;
+        App.io.execute(() -> {
+            List<String[]> tiles = new ArrayList<>();   // {list, brand, name, color}
+            if (only == null) for (Catalog.Brand b : Catalog.brands(list)) tiles.add(new String[]{list, b.id, b.name, b.color});
+            else for (String[] o : only) for (Catalog.Brand b : Catalog.brands(o[0])) if (b.id.equals(o[1])) tiles.add(new String[]{o[0], b.id, b.name, b.color});
+            runOnUiThread(() -> {
+                if (id != built) return;
+                if (tiles.isEmpty()) { col.removeView(h); col.removeView((View) row.getParent()); return; }
+                for (String[] t : tiles)
+                    row.addView(platformTile(t[2], t[3], v -> startActivity(new Intent(this, PlatformActivity.class).putExtra("platform", t[0]).putExtra("brand", t[1]))));
+            });
+        });
+    }
+
     /** A service or brand: its name in its own color (no logos: they are trademarks). */
     View platformTile(String name, String color, View.OnClickListener click) {
         int c = TEXT;
         try { c = Color.parseColor(color); } catch (RuntimeException ignored) { }
         TextView t = text(name, sp(17, 15), c, true);
         t.setGravity(Gravity.CENTER);
-        t.setSingleLine();
+        t.setMaxLines(1);   // not setSingleLine(): it scrolls the text inside the view, and the focus ring is drawn scrolled away with it
         LinearLayout.LayoutParams lp = cardParams(App.tv ? 160 : 124, App.tv ? 64 : 54);
         lp.width = -2;   // as wide as its name ("National Geographic"), never narrower than the others
         t.setMinWidth(dp(App.tv ? 160 : 124));
@@ -1064,17 +1104,28 @@ public class Home extends Activity {
     void fillPosters(LinearLayout row, List<Catalog.Title> list, String extra, int moreTab) {
         for (Catalog.Title t : list.subList(0, Math.min(14, list.size()))) row.addView(posterCard(t, posterW()));
         if (moreTab < 0) return;
+        row.addView(moreCard(v -> {
+            if (extra.isEmpty() || extra.startsWith("genre=")) genres.put(moreTab, extra.replaceFirst("^genre=", ""));
+            else if (extra.startsWith("local=")) genres.put(moreTab, Catalog.LANG + Catalog.languages(extra.substring(6))[0]);
+            selectTab(moreTab);
+        }));
+    }
+
+    /** The card a row of posters ends in when there is more than it shows. */
+    View moreCard(View.OnClickListener click) {
         TextView more = text(App.t(R.string.home_more_arrow), sp(17, 15), TEXT, true);
         more.setGravity(Gravity.CENTER);
         more.setLayoutParams(cardParams(posterW(), posterW() * 3 / 2));
         more.setBackground(rounded(CARD, dp(10)));
         focusable(more, dp(10));
-        more.setOnClickListener(v -> {
-            if (extra.isEmpty() || extra.startsWith("genre=")) genres.put(moreTab, extra.replaceFirst("^genre=", ""));
-            else if (extra.startsWith("local=")) genres.put(moreTab, Catalog.LANG + Catalog.languages(extra.substring(6))[0]);
-            selectTab(moreTab);
-        });
-        row.addView(more);
+        more.setOnClickListener(click);
+        return more;
+    }
+
+    /** A sideways row of titles shows 15; a longer list ends in a More card that opens all of it as a grid, in the same order. */
+    void posterRow(LinearLayout row, String name, List<Catalog.Title> list) {
+        for (Catalog.Title t : list.subList(0, Math.min(15, list.size()))) row.addView(posterCard(t, posterW()));
+        if (list.size() > 15) row.addView(moreCard(v -> ListActivity.open(this, name, list)));
     }
 
     /** Movies, TV and Anime: the sites that carry them, then the native catalog (genre chips, posters, load more). */

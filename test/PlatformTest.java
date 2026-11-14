@@ -15,7 +15,7 @@ public class PlatformTest {
         for (String[] s : Catalog.services("in")) in.append(s[0]).append(' ');
         for (String[] s : Catalog.services("US")) us.append(s[0]).append(' ');
         for (String[] s : Catalog.services("")) none.append(s[0]).append(' ');
-        check("India adds its own services", in.toString().trim(), "nfx amp dnp jhs hbm atp zee pmp cru");
+        check("India adds its own services", in.toString().trim(), "nfx amp jhs hbm atp zee pmp cru");
         check("the US adds its own", us.toString().trim(), "nfx amp dnp hbm atp hlu pcp pmp cru");
         check("no country: the ones that are everywhere", none.toString().trim(), "nfx amp dnp hbm atp pmp cru");
         check("address", Catalog.platformPath("series", "dnp"), Catalog.PLATFORMS + "/ZG5wOjpVUzowOjA6MDo%3D/catalog/series/dnp.json");
@@ -30,6 +30,10 @@ public class PlatformTest {
         check("title fields", b.get(0).titles.get(0).name + " " + b.get(0).titles.get(0).type + " " + b.get(0).titles.get(0).tmdb + " | " + b.get(0).titles.get(1).type, "Avengers: Endgame movie 299534 | series");
         check("groups and tags", b.get(0).groups.size() + " " + b.get(0).groups.get(0)[1] + " " + b.get(0).titles.get(0).tagged("mcu") + b.get(0).titles.get(0).tagged("animation") + b.get(0).titles.get(0).tagged("mc") + b.get(0).titles.get(1).tagged("mcu"), "1 MCU truetruefalsefalse");
         check("numbers for the rows", b.get(0).titles.get(0).rating + " " + b.get(0).titles.get(0).votes + " " + b.get(0).titles.get(0).pop + " " + b.get(0).titles.get(1).votes, "8.2 27000 41.5 0");
+        check("row: series only", b.get(0).list("", "series").size() + " " + b.get(0).list("", "series").get(0).name, "1 WandaVision");
+        check("row: a group, a kind, an order", b.get(0).list("", "mcu").size() + " " + b.get(0).list("series", "mcu").size() + " " + b.get(0).list("movie", "series").size() + " " + b.get(0).list("", "popular").get(0).name, "1 0 0 Avengers: Endgame");
+        check("India's Hotstar tile", Catalog.service("jhs")[1], "Hotstar+");
+        check("row: top rated needs votes", b.get(0).list("", "rated").size(), 1);
         check("another platform has none", Catalog.parseBrands(json, "nfx").size(), 0);
         check("broken file", Catalog.parseBrands("{\"platforms\":", "dnp").size(), 0);
 

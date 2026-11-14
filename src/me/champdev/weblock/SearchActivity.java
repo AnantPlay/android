@@ -212,9 +212,9 @@ public class SearchActivity extends Home {
                 List<Catalog.Title> kind = new ArrayList<>();
                 for (Catalog.Title t : titles) if (t.series() == series) kind.add(t);
                 if (kind.isEmpty()) continue;
-                results.addView(heading(App.t(series ? R.string.search_series_n : R.string.search_movies_n, kind.size())));
-                LinearLayout row = row(results);
-                for (Catalog.Title t : kind) row.addView(posterCard(t, posterW()));
+                String name = App.t(series ? R.string.search_series_n : R.string.search_movies_n, kind.size());
+                results.addView(heading(name));
+                posterRow(row(results), query, kind);
             }
         } else if (failed) {
             results.addView(heading(App.t(R.string.search_movies_series)));

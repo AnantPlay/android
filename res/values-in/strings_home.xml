@@ -231,6 +231,8 @@
     <string name="home_platforms">Platform</string>
     <string name="home_all">Semua</string>
     <string name="home_animation">Animasi</string>
+    <string name="home_kids">Anak-anak</string>
+    <string name="home_studios">Studio</string>
     <string name="home_trending">Sedang tren</string>
     <string name="home_top_rated">Rating tertinggi</string>
     <string name="home_documentaries">Dokumenter</string>
