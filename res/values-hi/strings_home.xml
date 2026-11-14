@@ -224,4 +224,8 @@
     <string name="home_audio_language">ऑडियो भाषा</string>
     <string name="home_audio_language_help">जिन वीडियो में एक से ज़्यादा ऑडियो ट्रैक हैं, वे इस भाषा में शुरू होते हैं अगर उनमें यह हो। प्लेयर का ऑडियो बटन भी इसे बदलता है।</string>
     <string name="home_audio_original">ओरिजिनल</string>
+    <string name="home_clear_searches">सर्च हिस्ट्री मिटाएं</string>
+    <string name="home_searches_count">सेव की गई सर्च: %1$d</string>
+    <string name="home_clear_searches_msg">सर्च बॉक्स के नीचे दिखने वाली हाल की सर्च हट जाएंगी।</string>
+    <string name="home_searches_cleared">सर्च हिस्ट्री मिटा दी गई</string>
 </resources>

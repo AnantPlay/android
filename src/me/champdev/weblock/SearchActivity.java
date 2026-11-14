@@ -46,7 +46,20 @@ public class SearchActivity extends Home {
     @Override void build() {
         col.removeAllViews();
         firstCard = null;
-        box = WebActivity.field(this, App.t(R.string.search_hint), InputType.TYPE_CLASS_TEXT);
+        // The box drops down your recent searches (all of them while it is empty, the ones that start the same while typing)
+        android.widget.AutoCompleteTextView ac = new android.widget.AutoCompleteTextView(this) {
+            @Override public boolean enoughToFilter() { return true; }   // an empty box lists them all (else the list closes itself)
+        };
+        ac.setHint(App.t(R.string.search_hint));
+        ac.setInputType(InputType.TYPE_CLASS_TEXT);
+        ac.setTypeface(android.graphics.Typeface.DEFAULT);
+        ac.setThreshold(1);
+        ac.setAdapter(recentAdapter());
+        ac.setDropDownBackgroundDrawable(rounded(CARD, dp(14)));
+        ac.setDropDownVerticalOffset(dp(6));
+        ac.setOnItemClickListener((p, v, i, id) -> searchNow());
+        ac.setOnClickListener(v -> showRecent());
+        box = ac;
         box.setSingleLine(true);
         box.setImeOptions(EditorInfo.IME_ACTION_SEARCH);
         box.setTextColor(TEXT);
@@ -57,6 +70,8 @@ public class SearchActivity extends Home {
         iconize(box, R.drawable.ic_search, MUTED);
         box.setTextColor(TEXT);
         focusable(box, dp(14));
+        android.view.View.OnFocusChangeListener ring = box.getOnFocusChangeListener();   // focusable's ring, plus the recent searches
+        box.setOnFocusChangeListener((v, has) -> { ring.onFocusChange(v, has); if (has) showRecent(); });
         box.setText(query);
         box.setSelection(query.length());
         box.addTextChangedListener(new TextWatcher() {
@@ -64,6 +79,7 @@ public class SearchActivity extends Home {
             @Override public void onTextChanged(CharSequence s, int a, int b, int c) { }
             @Override public void afterTextChanged(Editable e) {
                 query = e.toString();
+                if (query.isEmpty()) showRecent();
                 // Nothing is searched or redrawn until typing pauses (a TV remote types slowly: each letter used to redraw the page)
                 App.main.removeCallbacks(render);
                 App.main.removeCallbacks(fetchTitles);
@@ -72,15 +88,7 @@ public class SearchActivity extends Home {
             }
         });
         // "Search" on the keyboard: hide it so the arrows can move over the results
-        box.setOnEditorActionListener((v, action, ev) -> {
-            App.main.removeCallbacks(render);   // Search pressed: no waiting
-            App.main.removeCallbacks(fetchTitles);
-            showResults();
-            searchTitles();
-            ((InputMethodManager) getSystemService(INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(box.getWindowToken(), 0);
-            if (firstCard != null) firstCard.requestFocus();
-            return true;
-        });
+        box.setOnEditorActionListener((v, action, ev) -> { searchNow(); return true; });
         LinearLayout bar = new LinearLayout(this);
         bar.setGravity(Gravity.CENTER_VERTICAL);
         bar.addView(box, new LinearLayout.LayoutParams(0, -2, 1));
@@ -101,6 +109,71 @@ public class SearchActivity extends Home {
             if (getIntent().getBooleanExtra("voice", false)) box.post(() -> listen(box::setText));   // opened from the mic chip
             else if (!App.tv) getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
         }
+    }
+
+    /** Search pressed (or a recent search picked): no waiting, the search is kept, the keyboard goes so the arrows reach the results. */
+    void searchNow() {
+        query = box.getText().toString();
+        remember(query);
+        App.main.removeCallbacks(render);
+        App.main.removeCallbacks(fetchTitles);
+        ((android.widget.AutoCompleteTextView) box).dismissDropDown();
+        showResults();
+        searchTitles();
+        ((InputMethodManager) getSystemService(INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(box.getWindowToken(), 0);
+        if (firstCard != null) firstCard.requestFocus();
+    }
+
+    // ---- recent searches: prefs "searches", newest first ----
+
+    static final int RECENT = 15;
+
+    static List<String> recent() {
+        List<String> out = new ArrayList<>();
+        try {
+            org.json.JSONArray a = new org.json.JSONArray(App.prefs.getString("searches", "[]"));
+            for (int i = 0; i < a.length(); i++) out.add(a.getString(i));
+        } catch (org.json.JSONException ignored) { }
+        return out;
+    }
+
+    /** Kept when it was searched for real: Search pressed, a recent one picked, or something in the results opened. */
+    static void remember(String q) {
+        q = q.trim().replaceAll("\\s+", " ");
+        if (q.length() < 2) return;
+        List<String> all = recent();
+        for (int i = all.size() - 1; i >= 0; i--) if (all.get(i).equalsIgnoreCase(q)) all.remove(i);
+        all.add(0, q);
+        App.prefs.edit().putString("searches", new org.json.JSONArray(all.subList(0, Math.min(RECENT, all.size()))).toString()).apply();
+    }
+
+    android.widget.ArrayAdapter<String> recentAdapter() {
+        return new android.widget.ArrayAdapter<String>(this, android.R.layout.simple_dropdown_item_1line, recent()) {
+            @Override public android.view.View getView(int i, android.view.View v, android.view.ViewGroup parent) {
+                TextView t = (TextView) super.getView(i, v, parent);
+                t.setTextColor(TEXT);
+                t.setTextSize(sp(17, 15));
+                t.setPadding(u(18, 14), u(12, 10), u(18, 14), u(12, 10));
+                android.graphics.drawable.Drawable d = getDrawable(R.drawable.ic_search).mutate();
+                d.setTint(MUTED);
+                d.setBounds(0, 0, dp(20), dp(20));
+                t.setCompoundDrawablesRelative(d, null, null, null);
+                t.setCompoundDrawablePadding(dp(14));
+                return t;
+            }
+        };
+    }
+
+    /** The whole list while the box is empty (an empty box filters nothing by itself). */
+    void showRecent() {
+        android.widget.AutoCompleteTextView ac = (android.widget.AutoCompleteTextView) box;
+        if (!ac.hasFocus() || ac.getText().length() > 0 || ac.getAdapter() == null || isFinishing()) return;
+        ((android.widget.ArrayAdapter<?>) ac.getAdapter()).getFilter().filter(null, n -> { if (n > 0 && ac.hasFocus() && ac.getText().length() == 0 && !isFinishing()) ac.showDropDown(); });
+    }
+
+    @Override protected void onPause() {
+        if (!isFinishing()) remember(query);   // left for a result (a title, a site, a channel), not Back
+        super.onPause();
     }
 
     void showResults() {

@@ -224,4 +224,8 @@
     <string name="home_audio_language">Bahasa audio</string>
     <string name="home_audio_language_help">Video dengan lebih dari satu trek audio dimulai dalam bahasa ini jika tersedia. Tombol Audio di pemutar juga mengubahnya.</string>
     <string name="home_audio_original">Asli</string>
+    <string name="home_clear_searches">Hapus riwayat pencarian</string>
+    <string name="home_searches_count">Pencarian tersimpan: %1$d</string>
+    <string name="home_clear_searches_msg">Pencarian terbaru di bawah kotak pencarian dihapus.</string>
+    <string name="home_searches_cleared">Riwayat pencarian dihapus</string>
 </resources>

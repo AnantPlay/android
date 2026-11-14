@@ -224,4 +224,8 @@
     <string name="home_audio_language">لغة الصوت</string>
     <string name="home_audio_language_help">تبدأ الفيديوهات التي فيها أكثر من مسار صوتي بهذه اللغة عندما تتوفر. يغيّرها زر الصوت في المشغّل أيضًا.</string>
     <string name="home_audio_original">الأصلية</string>
+    <string name="home_clear_searches">مسح سجل البحث</string>
+    <string name="home_searches_count">عمليات البحث المحفوظة: %1$d</string>
+    <string name="home_clear_searches_msg">تُزال عمليات البحث الأخيرة التي تظهر تحت مربع البحث.</string>
+    <string name="home_searches_cleared">تم مسح سجل البحث</string>
 </resources>

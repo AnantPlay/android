@@ -224,4 +224,8 @@
     <string name="home_audio_language">Idioma do áudio</string>
     <string name="home_audio_language_help">Vídeos com mais de uma faixa de áudio começam neste idioma quando o têm. O botão Áudio do player também o muda.</string>
     <string name="home_audio_original">Original</string>
+    <string name="home_clear_searches">Limpar histórico de busca</string>
+    <string name="home_searches_count">Buscas salvas: %1$d</string>
+    <string name="home_clear_searches_msg">As buscas recentes abaixo da caixa de busca são removidas.</string>
+    <string name="home_searches_cleared">Histórico de busca limpo</string>
 </resources>

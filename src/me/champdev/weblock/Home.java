@@ -1607,6 +1607,9 @@ public class Home extends Activity {
         int seen = History.list().size();
         secBox.addView(settingRow(R.drawable.ic_p_replay, App.t(R.string.home_clear_history), App.t(seen == 1 ? R.string.home_history_count_one : R.string.home_history_count_many, seen), null, v ->
             confirm(App.t(R.string.home_clear_history_title), App.t(R.string.home_clear_history_msg), App.t(R.string.home_clear), () -> { History.save(new ArrayList<>()); rebuild(); toast(App.t(R.string.home_history_cleared)); })));
+        int searched = SearchActivity.recent().size();
+        secBox.addView(settingRow(R.drawable.ic_search, App.t(R.string.home_clear_searches), App.t(R.string.home_searches_count, searched), null, v ->
+            confirm(App.t(R.string.home_clear_searches) + "?", App.t(R.string.home_clear_searches_msg), App.t(R.string.home_clear), () -> { App.prefs.edit().remove("searches").apply(); rebuild(); toast(App.t(R.string.home_searches_cleared)); })));
         int watched = Iptv.history().size();
         secBox.addView(settingRow(R.drawable.ic_live, App.t(R.string.home_clear_iptv_history), App.t(watched == 1 ? R.string.home_iptv_history_count_one : R.string.home_iptv_history_count_many, watched), null, v ->
             confirm(App.t(R.string.home_clear_iptv_history_title), App.t(R.string.home_clear_iptv_history_msg), App.t(R.string.home_clear), () -> { App.prefs.edit().remove("iptvhist").apply(); rebuild(); toast(App.t(R.string.home_iptv_history_cleared)); })));

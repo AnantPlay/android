@@ -224,4 +224,8 @@
     <string name="home_audio_language">Audiosprache</string>
     <string name="home_audio_language_help">Videos mit mehreren Tonspuren starten in dieser Sprache, wenn sie sie haben. Die Audio-Taste im Player ändert sie auch.</string>
     <string name="home_audio_original">Original</string>
+    <string name="home_clear_searches">Suchverlauf löschen</string>
+    <string name="home_searches_count">Gespeicherte Suchen: %1$d</string>
+    <string name="home_clear_searches_msg">Die letzten Suchen unter dem Suchfeld werden entfernt.</string>
+    <string name="home_searches_cleared">Suchverlauf gelöscht</string>
 </resources>
