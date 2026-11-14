@@ -231,4 +231,7 @@
     <string name="home_platforms">Plataformas</string>
     <string name="home_all">Todo</string>
     <string name="home_animation">Animación</string>
+    <string name="home_trending">Tendencias</string>
+    <string name="home_top_rated">Mejor valoradas</string>
+    <string name="home_documentaries">Documentales</string>
 </resources>

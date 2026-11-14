@@ -231,4 +231,7 @@
     <string name="home_platforms">المنصات</string>
     <string name="home_all">الكل</string>
     <string name="home_animation">رسوم متحركة</string>
+    <string name="home_trending">الرائج</string>
+    <string name="home_top_rated">الأعلى تقييمًا</string>
+    <string name="home_documentaries">وثائقيات</string>
 </resources>

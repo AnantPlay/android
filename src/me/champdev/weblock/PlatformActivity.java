@@ -9,8 +9,8 @@ import java.util.List;
 
 /**
  * One streaming service: its brands as tiles (Disney+ > Marvel, Pixar...), then what is popular on it, movies or series.
- * Opened with "brand" it is that brand's page: all its movies and series, newest first, with chips that narrow it
- * (Marvel: All, MCU, Animation, Movies, Series).
+ * Opened with "brand" it is that brand's page: chips that narrow it (Marvel: All, MCU, Avengers, Animation, Movies, Series),
+ * rows of what is trending, popular and top rated, then all its movies and series, newest first.
  */
 public class PlatformActivity extends Home {
     String kind;   // movie | series: the list showing
@@ -64,7 +64,7 @@ public class PlatformActivity extends Home {
         LinearLayout holder = new LinearLayout(this);
         holder.setOrientation(LinearLayout.VERTICAL);
         col.addView(holder);
-        loadPage(kind, Catalog.PLATFORM + id, 0, holder, new Grid(holder, App.tv ? 8 : 3), built);
+        loadPage(kind, Catalog.PLATFORM + id, 0, holder, new Grid(holder, posterCols()), built);
         focusFirst = App.tv && firstCard == null && !skipFocus && !focusKind;   // the list is not here yet: showPage hands the remote over
         android.view.View first = firstCard;   // a list that was here at once: the remote starts on its first poster (not when coming back to this page)
         if (App.tv && first != null && !skipFocus && !focusKind && !first.requestFocus()) col.post(first::requestFocus);
@@ -99,7 +99,8 @@ public class PlatformActivity extends Home {
         firstCard = null;
         List<String[]> chips = new ArrayList<>();   // {filter, label}
         chips.add(new String[]{"", App.t(R.string.home_all)});
-        for (String[] g : b.groups) chips.add(new String[]{g[0], g[0].equals("animation") ? App.t(R.string.home_animation) : g[1]});
+        for (String[] g : b.groups)
+            chips.add(new String[]{g[0], g[0].equals("animation") ? App.t(R.string.home_animation) : g[0].equals("documentary") ? App.t(R.string.home_documentaries) : g[1]});
         boolean movies = false, series = false;
         for (Catalog.Title t : b.titles) { if (t.series()) series = true; else movies = true; }
         if (movies && series) {
@@ -119,14 +120,36 @@ public class PlatformActivity extends Home {
                 row.addView(chip);
             }
         }
+        List<Catalog.Title> kept = new ArrayList<>(), rated = new ArrayList<>();
+        for (Catalog.Title t : b.titles) if (filter.isEmpty() || filter.equals(t.type) || t.tagged(filter)) kept.add(t);
+        if (kept.size() >= 30) {   // a short list is all on screen already
+            for (Catalog.Title t : kept) if (t.votes >= 200) rated.add(t);
+            top(body, R.string.home_trending, kept, (x, y) -> Float.compare(y.pop, x.pop));
+            top(body, R.string.home_popular, kept, (x, y) -> y.votes - x.votes);
+            if (rated.size() >= 5) top(body, R.string.home_top_rated, rated, (x, y) -> Float.compare(number(y.rating), number(x.rating)));
+        }
         for (String k : new String[]{"movie", "series"}) {
             List<Catalog.Title> list = new ArrayList<>();
-            for (Catalog.Title t : b.titles) if (t.type.equals(k) && (filter.isEmpty() || filter.equals(k) || t.tagged(filter))) list.add(t);
+            for (Catalog.Title t : kept) if (t.type.equals(k)) list.add(t);
             if (list.isEmpty()) continue;
             list.sort((x, y) -> y.year.compareTo(x.year));   // newest first; the job lists them so already, this keeps it true
             body.addView(heading(App.t(k.equals("movie") ? R.string.home_tab_movies : R.string.title_show), String.valueOf(list.size())));
-            Grid grid = new Grid(body, App.tv ? 8 : 3);
+            Grid grid = new Grid(body, posterCols());
             for (Catalog.Title t : list) grid.add(posterCard(t, grid.cell));
         }
+    }
+
+    static float number(String s) {
+        try { return Float.parseFloat(s); } catch (NumberFormatException e) { return 0; }
+    }
+
+    /** A row of the 15 titles that come first in this order; none when the file has no numbers to order by (an older one). */
+    void top(LinearLayout body, int name, List<Catalog.Title> from, java.util.Comparator<Catalog.Title> order) {
+        List<Catalog.Title> list = new ArrayList<>(from);
+        list.sort(order);
+        if (order.compare(list.get(0), list.get(list.size() - 1)) == 0) return;
+        body.addView(heading(App.t(name)));
+        LinearLayout row = row(body);
+        for (Catalog.Title t : list.subList(0, Math.min(15, list.size()))) row.addView(posterCard(t, posterW()));
     }
 }

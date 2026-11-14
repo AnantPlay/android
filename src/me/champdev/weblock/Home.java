@@ -102,6 +102,7 @@ public class Home extends Activity {
         col.setClipChildren(false);   // grown cards and their rings draw past their rows
         sv.addView(col);
         sv.setOnScrollChangeListener((v, x, y, ox, oy) -> nearEnd());
+        if (App.tv) sv.getViewTreeObserver().addOnGlobalFocusChangeListener((old, now) -> { if (now != null && now != col && inside(now, col)) lastCard = now; });
         if (!App.tv && tabs()) {
             // Pull down at the top of a tab to load it again
             float[] from = {-1};
@@ -150,6 +151,7 @@ public class Home extends Activity {
         build();
         skipFocus = false;
         if (back) restoreFocus(15);
+        else if (savedTab == tab && savedScroll > 0) restoreScroll(savedScroll);   // a phone, or a TV whose remote sat on the rail
     }
 
     // ---- TV: the remote's place is kept. Coming back to a screen puts it on the card it left from, not on the first button ----
@@ -157,6 +159,8 @@ public class Home extends Activity {
     String focusKey;   // the card's own key (a title, channel or site), when it has one
     int[] focusPath;   // where it sat in the page: child numbers from the page down to it
     int savedScroll, savedTab = -1;
+    View lastCard;   // TV: the card in the page the remote was on last (it is on the rail when a tab is pressed)
+    final java.util.Map<Integer, Object[]> places = new java.util.HashMap<>();   // tab > {focusKey, focusPath, scroll}: where each tab was left
 
     @Override protected void onPause() {
         super.onPause();
@@ -164,8 +168,33 @@ public class Home extends Activity {
         View f = getCurrentFocus();
         focusKey = null;
         focusPath = null;
+        savedScroll = page.getScrollY();
+        savedTab = tab;
         if (!App.tv || f == null || !inside(f, col)) return;
         rememberPlace(f);
+    }
+
+    /**
+     * The page is redrawn (back from another screen, or a tab picked again) and scrolls back to where it was. The redrawn page is
+     * measured a moment later and lists arrive later still (a long list's next page loads when the scroll reaches its end), so the
+     * place is put back until it has held for 3 looks in a row, for 2.5 seconds at most; a touch ends it.
+     */
+    void restoreScroll(int y, int at, int tries, int held) {
+        if (at != built + touches || tries <= 0) return;
+        boolean there = page.getScrollY() == y;
+        if (!there) page.scrollTo(0, y);
+        if (!there || held < 3) col.postDelayed(() -> restoreScroll(y, at, tries - 1, there ? held + 1 : 0), 100);
+    }
+
+    void restoreScroll(int y) {
+        restoreScroll(y, built + touches, 25, 0);
+    }
+
+    int touches;   // counts presses on the screen: one ends a restoreScroll in progress
+
+    @Override public boolean dispatchTouchEvent(android.view.MotionEvent e) {
+        if (e.getAction() == android.view.MotionEvent.ACTION_DOWN) touches++;   // the user moves the page: nothing late may move it back
+        return super.dispatchTouchEvent(e);
     }
 
     /** The card the remote is on (its key and its place in the page), with the scroll and the tab, for restoreFocus. */
@@ -856,7 +885,19 @@ public class Home extends Activity {
             goHome(this);
             return;
         }
-        if (n == tab) return;
+        if (n == tab) {   // the tab that is showing, pressed again: back to its top
+            page.smoothScrollTo(0, 0);
+            if (App.tv && firstCard != null) firstCard.requestFocus();
+            return;
+        }
+        // Where this tab is left: coming back to it later returns there, not to its top
+        focusKey = null;
+        focusPath = null;
+        if (App.tv && lastCard != null && inside(lastCard, col)) rememberPlace(lastCard);
+        places.put(tab, new Object[]{focusKey, focusPath, page.getScrollY()});
+        focusKey = null;
+        focusPath = null;
+        lastCard = null;
         tab = n;
         // The pressed tab lights up and the old page goes at once; the new page is drawn on the next frame
         styleTabs();
@@ -871,7 +912,14 @@ public class Home extends Activity {
             if (tab != n) return;
             col.setAlpha(0f);   // the new page fades in and rises a little
             col.setTranslationY(dp(14));
-            build();   // on a TV the remote lands on the tab's first card (build does it), not left behind on the rail
+            Object[] place = places.remove(n);
+            boolean card = place != null && App.tv && (place[0] != null || place[1] != null);
+            if (card) { focusKey = (String) place[0]; focusPath = (int[]) place[1]; savedScroll = (Integer) place[2]; }
+            skipFocus = card;
+            build();   // on a TV the remote lands on the tab's first card (build does it), or on the card it left this tab from
+            skipFocus = false;
+            if (card) restoreFocus(15);
+            else if (place != null && (Integer) place[2] > 0) restoreScroll((Integer) place[2]);
             col.animate().alpha(1f).translationY(0).setDuration(220).start();
         });
     }
@@ -882,7 +930,10 @@ public class Home extends Activity {
     }
 
     /** Poster width in dp for a row of posters. */
-    int posterW() { return App.tv ? 122 : 108; }
+    int posterW() { return App.tv ? 150 : 124; }
+
+    /** Posters across the screen in a grid of titles. */
+    int posterCols() { return App.tv ? 6 : 3; }
 
     View note(String s) {
         TextView t = text(s, sp(15, 13), MUTED, false);
@@ -982,13 +1033,13 @@ public class Home extends Activity {
     View platformTile(String name, String color, View.OnClickListener click) {
         int c = TEXT;
         try { c = Color.parseColor(color); } catch (RuntimeException ignored) { }
-        TextView t = text(name, sp(20, 17), c, true);
+        TextView t = text(name, sp(17, 15), c, true);
         t.setGravity(Gravity.CENTER);
         t.setSingleLine();
-        LinearLayout.LayoutParams lp = cardParams(App.tv ? 200 : 148, App.tv ? 84 : 66);
+        LinearLayout.LayoutParams lp = cardParams(App.tv ? 160 : 124, App.tv ? 64 : 54);
         lp.width = -2;   // as wide as its name ("National Geographic"), never narrower than the others
-        t.setMinWidth(dp(App.tv ? 200 : 148));
-        t.setPadding(dp(22), 0, dp(22), 0);
+        t.setMinWidth(dp(App.tv ? 160 : 124));
+        t.setPadding(dp(18), 0, dp(18), 0);
         t.setLayoutParams(lp);
         t.setBackground(rounded(CARD, dp(14)));
         t.setTag("platform:" + name);
@@ -1047,7 +1098,7 @@ public class Home extends Activity {
         LinearLayout holder = new LinearLayout(this);
         holder.setOrientation(LinearLayout.VERTICAL);
         col.addView(holder);
-        loadPage(type, genre, 0, holder, new Grid(holder, App.tv ? 8 : 3), built);
+        loadPage(type, genre, 0, holder, new Grid(holder, posterCols()), built);
         focusFirst = App.tv && firstCard == null && !skipFocus;   // the list is not here yet: showPage hands the remote over
     }
 
@@ -1174,7 +1225,7 @@ public class Home extends Activity {
             }));
             return;
         }
-        int cols = App.tv ? 8 : 3;
+        int cols = App.tv ? 6 : 3;
         channelRow(App.t(R.string.home_continue_watching), Iptv.history(), cols, "history", 99, null);
         channelRow(App.t(R.string.home_favorites), Iptv.favorites(), cols, "fav", 14, v -> openIptv("fav", "", App.t(R.string.home_favorites), false));
         // What you added yourself: a row per playlist under the name you gave it, single stream links together

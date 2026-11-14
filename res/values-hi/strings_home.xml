@@ -231,4 +231,7 @@
     <string name="home_platforms">प्लेटफ़ॉर्म</string>
     <string name="home_all">सभी</string>
     <string name="home_animation">एनिमेशन</string>
+    <string name="home_trending">ट्रेंडिंग</string>
+    <string name="home_top_rated">टॉप रेटेड</string>
+    <string name="home_documentaries">डॉक्यूमेंट्री</string>
 </resources>

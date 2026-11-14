@@ -46,6 +46,8 @@ final class Catalog {
         String released = "";   // "2026-10-02T00:00:00.000Z": cinema release for a movie, first episode for a series
         boolean anime;   // set by search, from Kitsu's anime list
         String tags = "";   // a brand list's groups this title is in, space-separated ("mcu animation")
+        float pop;          // brand lists: TMDB's popularity now (Trending) and how many voted (Popular)
+        int votes;
         final List<Episode> episodes = new ArrayList<>();
 
         boolean series() { return type.equals("series"); }
@@ -527,6 +529,9 @@ final class Catalog {
                     t.year = x.optString("year");
                     t.poster = x.optString("poster");
                     t.tmdb = x.optString("tmdb");
+                    t.rating = x.optString("rating");
+                    t.pop = (float) x.optDouble("pop", 0);
+                    t.votes = x.optInt("votes");
                     JSONArray tags = x.optJSONArray("tags");
                     if (tags != null) t.tags = tags.join(" ").replace("\"", "");
                     if (t.id.startsWith("tt") && !t.name.isEmpty()) b.titles.add(t);

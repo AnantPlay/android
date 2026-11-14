@@ -91,11 +91,11 @@ public class SearchActivity extends Home {
         box.setOnEditorActionListener((v, action, ev) -> { searchNow(); return true; });
         LinearLayout bar = new LinearLayout(this);
         bar.setGravity(Gravity.CENTER_VERTICAL);
-        bar.addView(box, new LinearLayout.LayoutParams(0, -2, 1));
         android.widget.ImageView mic = iconButton(R.drawable.ic_mic, App.t(R.string.search_voice), v -> listen(box::setText));
-        ((LinearLayout.LayoutParams) mic.getLayoutParams()).setMargins(dp(10), 0, 0, 0);
+        ((LinearLayout.LayoutParams) mic.getLayoutParams()).setMargins(0, 0, dp(10), 0);
         mic.setColorFilter(TEXT);
-        bar.addView(mic);
+        bar.addView(mic);   // left of the box
+        bar.addView(box, new LinearLayout.LayoutParams(0, -2, 1));
         col.addView(bar, new LinearLayout.LayoutParams(-1, -2));
         results = new LinearLayout(this);
         results.setOrientation(LinearLayout.VERTICAL);
@@ -242,7 +242,7 @@ public class SearchActivity extends Home {
         }
         if (!chans.isEmpty()) {
             results.addView(heading(App.t(R.string.search_channels_n, chans.size())));
-            int cols = App.tv ? 8 : 3;
+            int cols = App.tv ? 6 : 3;
             LinearLayout row = row(results);
             for (Iptv.Channel c : chans.subList(0, Math.min(14, chans.size()))) row.addView(channelCard(c, cols, "search"));
             if (chans.size() > 14) {

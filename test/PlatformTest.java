@@ -21,7 +21,7 @@ public class PlatformTest {
         check("address", Catalog.platformPath("series", "dnp"), Catalog.PLATFORMS + "/ZG5wOjpVUzowOjA6MDo%3D/catalog/series/dnp.json");
 
         String json = "{\"platforms\":{\"dnp\":{\"brands\":["
-            + "{\"id\":\"marvel\",\"name\":\"Marvel\",\"color\":\"#E62429\",\"groups\":[{\"id\":\"mcu\",\"name\":\"MCU\"},{\"id\":\"\",\"name\":\"No id\"}],\"titles\":[{\"id\":\"tt4154796\",\"type\":\"movie\",\"name\":\"Avengers: Endgame\",\"year\":\"2019\",\"tags\":[\"mcu\",\"animation\"],\"poster\":\"https://i.example/a.jpg\",\"tmdb\":\"299534\"},"
+            + "{\"id\":\"marvel\",\"name\":\"Marvel\",\"color\":\"#E62429\",\"groups\":[{\"id\":\"mcu\",\"name\":\"MCU\"},{\"id\":\"\",\"name\":\"No id\"}],\"titles\":[{\"id\":\"tt4154796\",\"type\":\"movie\",\"name\":\"Avengers: Endgame\",\"year\":\"2019\",\"tags\":[\"mcu\",\"animation\"],\"rating\":\"8.2\",\"votes\":27000,\"pop\":41.5,\"poster\":\"https://i.example/a.jpg\",\"tmdb\":\"299534\"},"
             + "{\"id\":\"tt9140560\",\"type\":\"series\",\"name\":\"WandaVision\",\"year\":\"2021\"},{\"id\":\"nope\",\"type\":\"movie\",\"name\":\"No IMDb id\"},{\"id\":\"tt1\",\"type\":\"movie\",\"name\":\"\"}]},"
             + "{\"id\":\"empty\",\"name\":\"Empty\",\"titles\":[]},{\"id\":\"\",\"name\":\"No id\",\"titles\":[{\"id\":\"tt2\",\"name\":\"X\"}]}]}}}";
         List<Catalog.Brand> b = Catalog.parseBrands(json, "dnp");
@@ -29,6 +29,7 @@ public class PlatformTest {
         check("titles kept (no IMDb id, no name dropped)", b.get(0).titles.size(), 2);
         check("title fields", b.get(0).titles.get(0).name + " " + b.get(0).titles.get(0).type + " " + b.get(0).titles.get(0).tmdb + " | " + b.get(0).titles.get(1).type, "Avengers: Endgame movie 299534 | series");
         check("groups and tags", b.get(0).groups.size() + " " + b.get(0).groups.get(0)[1] + " " + b.get(0).titles.get(0).tagged("mcu") + b.get(0).titles.get(0).tagged("animation") + b.get(0).titles.get(0).tagged("mc") + b.get(0).titles.get(1).tagged("mcu"), "1 MCU truetruefalsefalse");
+        check("numbers for the rows", b.get(0).titles.get(0).rating + " " + b.get(0).titles.get(0).votes + " " + b.get(0).titles.get(0).pop + " " + b.get(0).titles.get(1).votes, "8.2 27000 41.5 0");
         check("another platform has none", Catalog.parseBrands(json, "nfx").size(), 0);
         check("broken file", Catalog.parseBrands("{\"platforms\":", "dnp").size(), 0);
 
