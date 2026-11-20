@@ -357,13 +357,31 @@ public class PlayerActivity extends Activity {
             for (int i = at; i < sb.length() - 1; i++)
                 if (sb.charAt(i) == '\n' && sb.charAt(i + 1) != '-' && sb.charAt(i + 1) != '\u2013') sb.setCharAt(i, ' ');
         }
+        if (sb.length() != 0) {
+            boolean sinhala = sb.chars().anyMatch(c -> c >= 0x0d80 && c <= 0x0dff);
+            if (sinhala != styledSinhala) styleSubtitle(sinhala);
+        }
         subtitle.setText(sb);
         subtitle.setVisibility(sb.length() == 0 ? View.GONE : View.VISIBLE);
     }
 
-    /** Subtitle size, background and distance from the bottom: 22 sp and 20 dp, changed by the Subtitles panel. */
+    private android.graphics.Typeface sinTypeface;
+    private boolean sinFontAttempted;
+    private boolean styledSinhala;
+
+    private void styleSubtitle(boolean sinhala) {
+        if (sinhala && !sinFontAttempted) {
+            sinFontAttempted = true;
+            try { sinTypeface = android.graphics.Typeface.createFromAsset(getAssets(), "NotoSansSinhala-Regular.ttf"); }
+            catch (RuntimeException ignored) { /* Keep the system font. */ }
+        }
+        styledSinhala = sinhala;
+        subtitle.setTypeface(sinhala ? sinTypeface : null);
+        subtitle.setTextSize((sinhala ? 20f : 22f) * Subs.size() / 100);
+    }
+
     void placeSubtitle() {
-        subtitle.setTextSize(22f * Subs.size() / 100);
+        styleSubtitle(styledSinhala);
         subtitle.setBackgroundColor((Subs.background() * 255 / 100) << 24);
         subtitle.setTextColor(Subs.color());
         ((FrameLayout.LayoutParams) subtitle.getLayoutParams()).bottomMargin = dp(Math.max(0, 20 + Subs.offset()));
@@ -1652,6 +1670,7 @@ public class PlayerActivity extends Activity {
             if (i == searchAt) { searchSubs(); return; }
             if (i == positionAt) { subtitleStyle(); return; }
             // Off keeps a file or track picked before from coming back; a track of the stream replaces a file; either way the next resume does the same
+            if (type == C.TRACK_TYPE_TEXT) ++subtitleRequest;
             if (type == C.TRACK_TYPE_TEXT) for (String k : subKeys(false)) {
                 Subs.remember(k, null);
                 Subs.rememberTrack(k, picks.get(i) == null ? null : langs.get(i), plain.get(i), nums.get(i));
@@ -2238,7 +2257,7 @@ public class PlayerActivity extends Activity {
             if (g.getType() != C.TRACK_TYPE_TEXT) continue;
             for (int t = 0; t < g.length; t++) {
                 String l = g.getTrackFormat(t).language;
-                if (!g.isTrackSupported(t) || l == null || !androidx.media3.common.util.Util.normalizeLanguageCode(l).equals(want)) continue;
+                if (!g.isTrackSupported(t) || l == null || !(Subs.sinCode(lang).equals("sin") ? Subs.sinCode(l).equals("sin") : androidx.media3.common.util.Util.normalizeLanguageCode(l).equals(want))) continue;
                 player.setTrackSelectionParameters(player.getTrackSelectionParameters().buildUpon().setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
                     .addOverride(new TrackSelectionOverride(g.getMediaTrackGroup(), t)).build());
                 say(App.t(R.string.player_subs_lang, Subs.language(lang)));
@@ -2326,17 +2345,34 @@ public class PlayerActivity extends Activity {
 
     // Side-load the file and restart the stream at the same spot with it switched on
     /** Downloads the file (unpacked, converted to UTF-8, kept for next time), then shows it as the subtitle track. */
+    private int subtitleRequest;
+
     void addSubtitle(Subs.Sub sub) {
+        fetchSubtitle(sub, ++subtitleRequest, 0);
+    }
+
+    private void fetchSubtitle(Subs.Sub sub, int request, int attempt) {
+        if (!currentSubtitleRequest(request)) return;
         App.io.execute(() -> {
-            SubFetch.Fetched f;
             try {
-                f = Subs.fetch(sub);
-            } catch (java.io.IOException e) {
-                runOnUiThread(() -> say(App.t(R.string.player_subs_failed)));
-                return;
+                SubFetch.Fetched fetched = Subs.fetch(sub);
+                runOnUiThread(() -> { if (currentSubtitleRequest(request)) showSubtitle(sub, fetched); });
+            } catch (SubFetch.RetryLaterException pending) {
+                runOnUiThread(() -> {
+                    if (!currentSubtitleRequest(request)) return;
+                    if (attempt < 2) {
+                        say(App.t(R.string.player_subs_translating));
+                        App.main.postDelayed(() -> fetchSubtitle(sub, request, attempt + 1), attempt == 0 ? 10000L : 25000L);
+                    } else say(App.t(R.string.player_subs_failed));
+                });
+            } catch (java.io.IOException failed) {
+                runOnUiThread(() -> { if (currentSubtitleRequest(request)) say(App.t(R.string.player_subs_failed)); });
             }
-            runOnUiThread(() -> { if (player != null && !isFinishing()) showSubtitle(sub, f); });
         });
+    }
+
+    private boolean currentSubtitleRequest(int request) {
+        return request == subtitleRequest && player != null && !isFinishing() && !isDestroyed();
     }
 
     void showSubtitle(Subs.Sub sub, SubFetch.Fetched f) {
@@ -2351,6 +2387,7 @@ public class PlayerActivity extends Activity {
         player.setMediaItem(mediaItem.build(), pos);
         player.prepare();
         player.setPlayWhenReady(playing);
+        styleSubtitle(Subs.sinCode(sub.lang).equals("sin"));
         say(App.t(R.string.player_subs_lang, Subs.language(sub.lang)));
         // Auto-sync: once enough has played, line the file up with the speech (a release with a recap is often minutes off)
         syncCues = null;

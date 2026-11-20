@@ -23,7 +23,11 @@ import java.util.function.Consumer;
 
 /** Looks for a newer release on GitHub and installs its APK over this app (same signing key, so Android takes it as an update). */
 final class Update {
-    static final String API = "https://api.github.com/repos/AnantPlay/android/releases?per_page=15";   // newest first
+    static final String API = "https://api.github.com/repos/dictationb1/anantplay-sinhala/releases?per_page=15";   // this fork's releases (never upstream's: a different signing key would make the installer reject it)
+    private static boolean forkDownload(String url) {
+        return url.startsWith("https://github.com/dictationb1/anantplay-sinhala/releases/download/");
+    }
+
     static final long EVERY = 3600L * 1000;   // an hour (and at every boot, below)
     static final int HOURLY = 7001, AT_BOOT = 7002;
     private static volatile boolean busy;
@@ -86,7 +90,10 @@ final class Update {
             JSONArray assets = r.getJSONArray("assets");
             for (int i = 0; i < assets.length() && apk.isEmpty(); i++) {
                 JSONObject a = assets.getJSONObject(i);
-                if (a.getString("name").endsWith(".apk") && a.getString("name").contains(want)) apk = a.getString("browser_download_url");
+                if (a.getString("name").endsWith(".apk") && a.getString("name").contains(want)) {
+                    String url = a.getString("browser_download_url");
+                    if (forkDownload(url)) apk = url;
+                }
             }
             App.prefs.edit().putString("updateVer", r.getString("tag_name").replaceFirst("^v", "")).putString("updateUrl", apk)
                 .putString("updateNotes", notes.toString()).putLong("updateAt", System.currentTimeMillis()).apply();
@@ -101,7 +108,7 @@ final class Update {
     /** The newer version GitHub has, "" when this one is the latest (or the release has no APK for this build). */
     static String latest() {
         String v = App.prefs.getString("updateVer", "");
-        return !App.prefs.getString("updateUrl", "").isEmpty() && newer(v, installed()) ? v : "";
+        return forkDownload(App.prefs.getString("updateUrl", "")) && newer(v, installed()) ? v : "";
     }
 
     /** Same as latest(), but "" after the user dismissed that version. */
@@ -145,7 +152,7 @@ final class Update {
      */
     static void install(Consumer<String> status) {
         String url = App.prefs.getString("updateUrl", "");
-        if (url.isEmpty()) { status.accept(App.t(R.string.update_no_download)); return; }
+        if (!forkDownload(url)) { status.accept(App.t(R.string.update_no_download)); return; }
         App.io.execute(() -> {
             Context app = App.app;
             PackageInstaller pi = app.getPackageManager().getPackageInstaller();

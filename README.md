@@ -66,3 +66,11 @@ AnantPlay is a browser and a media player. It hosts no video and ships no list o
 ## License
 
 [MIT](LICENSE)
+
+## Sinhala fork / සිංහල සංස්කරණය
+
+This fork adds Sinhala subtitle rendering, optional addon-first search, and ±100 ms / ±250 ms timing controls. In **Settings → Subtitles → Subtitle Addon URL**, enter your addon’s base URL (not its `manifest.json` URL). Leave it blank to use OpenSubtitles. Select Sinhala in the player’s subtitle search; enable **Auto subtitles** to reuse that preference.
+
+සිංහල උපසිරැසි සඳහා **Settings → Subtitles → Subtitle Addon URL** වෙත ඔබේ addon URL එක ඇතුළත් කරන්න. හිස්ව තැබුවහොත් OpenSubtitles භාවිත වේ. ශ්‍රී ලංකා රූපවාහිනී නාලිකා සඳහා **Settings → Sources → Add an index by link** තෝරන්න.
+
+For the Sri Lanka TV index, paste `https://raw.githubusercontent.com/dictationb1/srilanka-anantplay/main/index.json` into **Settings → Sources → Add an index by link** and accept the desired sources. See [build and signing notes](docs/FORK_WORKFLOW_NOTES.md).
