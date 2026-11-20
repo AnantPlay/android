@@ -13,6 +13,12 @@ import java.util.Map;
 final class Subs {
     static final String BASE = "https://opensubtitles-v3.strem.io/subtitles/";
 
+    static String addonUrl() {
+        return App.prefs.getString("subAddonUrl", "").trim();
+    }
+
+    static String sinCode(String lang) { return SubFetch.languageCode(lang); }
+
     static final class Sub {
         String url, lang, release;
         String encoding = "", source = "OpenSubtitles";
@@ -27,7 +33,7 @@ final class Subs {
 
     /** The /T spellings Android uses (deu, fra) as OpenSubtitles' /B ones (ger, fre). */
     static String osCode(String iso3) {
-        String c = iso3 == null ? "" : iso3.toLowerCase(Locale.ROOT);
+        String c = sinCode(iso3);
         String[] pairs = {"deu ger", "fra fre", "nld dut", "zho chi", "ces cze", "ron rum", "fas per", "slk slo", "msa may", "srp scc",
             "sqi alb", "hye arm", "eus baq", "mya bur", "kat geo", "isl ice", "mkd mac", "cym wel", "gre ell"};
         for (String p : pairs) if (p.startsWith(c + " ")) return p.substring(4);
@@ -58,13 +64,18 @@ final class Subs {
      */
     static List<Sub> search(String imdb, int season, int episode, String lang) {
         String code = osCode(lang);
+        String addon = addonUrl();
+        if (!addon.isEmpty()) {
+            List<Sub> custom = find(addon.replaceFirst("/+$", "") + "/subtitles/", imdb, season, episode, code);
+            if (custom != null && !custom.isEmpty()) return custom;
+        }
         List<Sub> out = new ArrayList<>();
         boolean asked = false;
         try {
             for (SubOs.Result r : SubOs.search(HTTP, imdb, season, episode, code)) {
                 Sub s = new Sub();
                 s.url = r.url;
-                s.lang = r.lang.isEmpty() ? code : r.lang;
+                s.lang = r.lang.isEmpty() ? code : sinCode(r.lang);
                 s.release = r.release;
                 s.encoding = r.encoding;
                 s.hearingImpaired = r.hearingImpaired;
@@ -72,8 +83,8 @@ final class Subs {
             }
             asked = true;
         } catch (java.io.IOException e) {
-            List<Sub> sample = find(imdb, season, episode);
-            if (sample != null) { asked = true; for (Sub s : sample) if (osCode(s.lang).equals(code)) out.add(s); }
+            List<Sub> sample = find(BASE, imdb, season, episode, code);
+            if (sample != null) return sample;
         }
         return asked ? out : null;
     }
@@ -82,7 +93,13 @@ final class Subs {
     static SubFetch.Fetched fetch(Sub s) throws java.io.IOException {
         java.io.File dir = new java.io.File(App.app.getCacheDir(), "subs");
         dir.mkdirs();
-        return SubFetch.fetch(HTTP, s.url, s.encoding, s.lang, dir);
+        return SubFetch.fetch(url -> SubFetch.openDownload(Warp.open(url)), s.url, s.encoding, s.lang, dir);
+    }
+
+    /** "Default" when the fork's own addon is on, else the URL set in Settings (shortened to its host). */
+    static String addonLabel() {
+        String u = addonUrl();
+        return u.isEmpty() ? App.t(R.string.subs_addon_default) : u.replaceFirst("^https?://", "").replaceFirst("/.*$", "");
     }
 
     /** How far (dp) subtitles sit above the default spot (20 dp from the bottom); negative = lower. Kept across videos. */
@@ -222,6 +239,18 @@ final class Subs {
         row(a, body, refresh, App.t(R.string.subs_color), Subs::colorName, by -> App.prefs.edit().putInt("subColor", Math.floorMod(colorIndex() + by, COLORS.length)).apply(), after);
         row(a, body, refresh, App.t(R.string.subs_background), Subs::backgroundLabel, by -> bump("subBg", 50, 25 * by, 0, 100), after);
         if (timing) row(a, body, refresh, App.t(R.string.subs_timing), Subs::delayLabel, by -> delayMs = Math.max(-600000, Math.min(600000, delayMs + 100L * by)), after);
+        if (timing) row(a, body, refresh, App.t(R.string.subs_timing_fine), Subs::delayLabel, by -> delayMs = Math.max(-600000, Math.min(600000, delayMs + 250L * by)), after);
+        android.widget.TextView addonRow = new android.widget.TextView(a);
+        addonRow.setTextColor(Home.TEXT);
+        addonRow.setTextSize(17);
+        addonRow.setText(App.t(R.string.subs_addon) + ": " + addonLabel());
+        addonRow.setPadding(0, Home.dp(a, 6), 0, Home.dp(a, 6));
+        addonRow.setOnClickListener(v -> editAddonUrl(a, u -> {
+            App.prefs.edit().putString("subAddonUrl", u.trim()).apply();
+            addonRow.setText(App.t(R.string.subs_addon) + ": " + addonLabel());
+            after.run();
+        }));
+        body.addView(addonRow);
         show(a, App.t(R.string.player_subtitles), body, App.t(timing ? R.string.subs_help_player : R.string.subs_help_settings), () -> {
             App.prefs.edit().remove("subSize").remove("subOffset").remove("subBg").remove("subColor").apply();
             if (timing) delayMs = 0;
@@ -379,6 +408,30 @@ final class Subs {
     }
 
     /** The file name (without its extension): whatever is typed is kept, minus what a file system refuses. `done` gets the name, or the old one if it was cancelled. */
+    private static void editAddonUrl(android.app.Activity a, java.util.function.Consumer<String> done) {
+        android.widget.EditText in = WebActivity.field(a, "https://", android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_URI);
+        in.setText(addonUrl());
+        in.setSingleLine(true);
+        android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(a).setTitle(App.t(R.string.subs_addon))
+            .setView(WebActivity.box(a, in)).setPositiveButton(android.R.string.ok, null)
+            .setNegativeButton(android.R.string.cancel, null).show();
+        dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            String value = in.getText().toString().trim();
+            if (!value.isEmpty()) {
+                try {
+                    java.net.URI uri = new java.net.URI(value);
+                    if (!webUrl(uri.toURL()) || uri.getRawQuery() != null || uri.getRawFragment() != null || uri.getUserInfo() != null)
+                        throw new IllegalArgumentException();
+                } catch (Exception invalid) {
+                    in.setError(App.t(R.string.subs_addon_invalid));
+                    return;
+                }
+            }
+            done.accept(value);
+            dialog.dismiss();
+        });
+    }
+
     static void pickName(android.app.Activity a, String current, java.util.function.Consumer<String> done) {
         android.widget.EditText in = WebActivity.field(a, current, android.text.InputType.TYPE_CLASS_TEXT);
         in.setText(current);
@@ -474,25 +527,45 @@ final class Subs {
         return b;
     }
 
-    /** season 0 = a movie. Null when OpenSubtitles can't be reached. Call off the main thread. */
-    static List<Sub> find(String imdb, int season, int episode) {
+    /** Query one Stremio-protocol addon, preserving the server's ranking. */
+    static List<Sub> find(String base, String imdb, int season, int episode, String onlyLang) {
         String path = season > 0 ? "series/" + imdb + ":" + season + ":" + episode : "movie/" + imdb;
+        java.net.HttpURLConnection connection = null;
         try {
-            JSONArray a = new JSONObject(Sites.readAll(Warp.open(BASE + path + ".json").getInputStream())).getJSONArray("subtitles");
+            java.net.URL endpoint = new java.net.URL(base + path + ".json");
+            if (!webUrl(endpoint)) return null;
+            connection = Warp.open(endpoint.toString());
+            JSONArray a;
+            try (java.io.InputStream in = connection.getInputStream()) {
+                a = new JSONObject(Sites.readAll(in)).getJSONArray("subtitles");
+            }
             List<Sub> out = new ArrayList<>();
             for (int i = 0; i < a.length(); i++) {
-                JSONObject o = a.getJSONObject(i);
+                JSONObject o = a.optJSONObject(i);
+                if (o == null || o.optString("url").isEmpty()) continue;
                 Sub s = new Sub();
-                s.url = o.getString("url");
-                s.lang = o.optString("lang", "und");
+                s.lang = sinCode(o.optString("lang", "und"));
+                if (!osCode(s.lang).equals(onlyLang)) continue;
+                try {
+                    java.net.URL download = new java.net.URL(connection.getURL(), o.getString("url"));
+                    if (!webUrl(download)) continue;
+                    s.url = download.toString();
+                } catch (java.net.MalformedURLException invalid) { continue; }
                 // The file name tells releases apart (the movie name is the same on every row)
                 s.release = o.optString("subtitleFileName", "").isEmpty() ? o.optString("movieReleaseName", App.t(R.string.subs_file_n, i + 1)) : o.optString("subtitleFileName");
+                s.source = base.equals(BASE) ? "OpenSubtitles" : "Subtitle addon";
                 out.add(s);
             }
             return out;
         } catch (Exception e) {
             return null;
+        } finally {
+            if (connection != null) connection.disconnect();
         }
+    }
+
+    private static boolean webUrl(java.net.URL url) {
+        return (url.getProtocol().equals("https") || url.getProtocol().equals("http")) && !url.getHost().isEmpty();
     }
 
     /** IMDb id of the best Cinemeta match for a page's title, "" when nothing matches. */

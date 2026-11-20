@@ -33,3 +33,7 @@ This product uses the TMDB API but is not endorsed or certified by TMDB. AnantPl
 | Component | License | Used for |
 | --- | --- | --- |
 | [Material Symbols](https://github.com/google/material-design-icons) by Google (Rounded, filled) | Apache-2.0 | the player icons (`res/drawable/ic_p_*.xml`, `ic_pb_*.xml`) |
+
+## Fonts
+
+[Noto Sans Sinhala](https://github.com/notofonts/sinhala), © The Noto Project Authors, is distributed under the SIL Open Font License 1.1. The [license and copyright notice](assets/NotoSansSinhala-OFL.txt) are included alongside the font in both APKs.

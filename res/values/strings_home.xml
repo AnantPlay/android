@@ -150,6 +150,10 @@
     <string name="home_auto_skip_help">Intros and recaps go by themselves, when their times are known (TheIntroDB, AniSkip). Credits still show a Next episode button.</string>
     <string name="home_auto_subs">Auto subtitles</string>
     <string name="home_auto_subs_help">Movies and episodes start with %1$s subtitles (the last language you picked): the stream\'s own, else OpenSubtitles. A file you picked for a video always comes back.</string>
+    <string name="subs_timing_fine">Timing (fine)</string>
+    <string name="subs_addon">Subtitle Addon URL</string>
+    <string name="subs_addon_default">Not configured (OpenSubtitles)</string>
+    <string name="subs_addon_invalid">Enter an HTTP or HTTPS base URL, or leave it blank.</string>
     <string name="home_simkl_help">Marks movies and episodes you watch in the player as watched on Simkl, a free tracker. Titles opened from Movies, TV or Anime.</string>
     <string name="home_simkl_disconnect_title">Disconnect Simkl?</string>
     <string name="home_simkl_disconnect_msg">AnantPlay stops telling Simkl what you watch. Your Simkl history stays.</string>

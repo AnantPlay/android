@@ -35,26 +35,11 @@ jobs:
       - name: Build the WARP helper
         run: warp/build.sh
 
-      # With the key stored as secrets the APKs are signed with the project key; without them (forks, pull requests)
-      # build.sh makes a throw-away key, fine for checking that it builds
-      - name: Signing key
-        env:
-          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
-          KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASS }}
-        run: |
-          if [ -n "$KEYSTORE_B64" ]; then
-            echo "$KEYSTORE_B64" | base64 -d > release.jks
-            printf %s "$KEYSTORE_PASS" > release.pass
-          fi
-
       - name: Build
         run: ./build.sh
 
-      - name: Check the APKs
-        run: |
-          for f in AnantPlay-*.apk; do
-            "$ANDROID_HOME"/build-tools/35.0.0/apksigner verify --print-certs "$f" | grep -E "Signer #1 certificate (DN|SHA-256)"
-          done
+      - name: Verify both APKs
+        run: scripts/verify-apks.sh
 
       - uses: actions/upload-artifact@v4
         with:
