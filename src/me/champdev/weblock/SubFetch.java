@@ -153,10 +153,30 @@ final class SubFetch {
         return null;
     }
 
+    static String languageCode(String lang) {
+        String code = lang == null ? "" : lang.trim().toLowerCase(Locale.ROOT);
+        return code.equals("si") || code.equals("sinh") || code.startsWith("si-") ? "sin" : code;
+    }
+
+    static InputStream openDownload(java.net.HttpURLConnection connection) throws IOException {
+        try {
+            if (connection.getResponseCode() == java.net.HttpURLConnection.HTTP_ACCEPTED)
+                throw new RetryLaterException();
+            return new java.io.FilterInputStream(connection.getInputStream()) {
+                @Override public void close() throws IOException {
+                    try { super.close(); } finally { connection.disconnect(); }
+                }
+            };
+        } catch (IOException e) {
+            connection.disconnect();
+            throw e;
+        }
+    }
+
     /** Legacy code page by OpenSubtitles language code (ISO 639-2/B); Latin languages and unknown codes get windows-1252. */
     static Charset forLang(String lang) {
         String n;
-        switch (lang == null ? "" : lang.trim().toLowerCase(Locale.ROOT)) {
+        switch (languageCode(lang)) {   // "si"/"sinh"/"sin" all read as "sin": Sinhala files are UTF-8 (BOM-stripped)
             case "ara": case "per": case "fas": case "urd": n = "windows-1256"; break;
             case "heb": n = "windows-1255"; break;
             case "rus": case "bul": case "ukr": case "srp": case "scc": case "mkd": case "mac": case "bel": n = "windows-1251"; break;
@@ -170,10 +190,16 @@ final class SubFetch {
             case "chi": case "zho": case "zhe": n = "GB18030"; break;
             case "zht": n = "Big5"; break;
             case "jpn": n = "Shift_JIS"; break;
+            case "sin": n = "UTF-8"; break;   // Sinhala ecosystem: piratelk/zoom.lk/OpenSubtitles sin files are UTF-8 (verified live)
             default: n = "windows-1252";
         }
         Charset c = charset(n);
         return c != null ? c : StandardCharsets.ISO_8859_1;
+    }
+
+    /** A 202 from the Sinhala addon: translation running server-side, retry shortly. */
+    static class RetryLaterException extends IOException {
+        RetryLaterException() { super("Subtitle translation pending (HTTP 202)"); }
     }
 
     static String sha1(String s) throws IOException {

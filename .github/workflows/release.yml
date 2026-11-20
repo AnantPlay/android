@@ -33,15 +33,21 @@ jobs:
       - name: Build the WARP helper
         run: warp/build.sh
 
-      # A release is never signed with a throw-away key: stop if the secrets are missing
+      # Without both secrets, build test artifacts but do not publish a release.
       - name: Signing key
+        id: signing
         env:
           KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
           KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASS }}
         run: |
-          [ -n "$KEYSTORE_B64" ] && [ -n "$KEYSTORE_PASS" ] || { echo "::error::KEYSTORE_B64 / KEYSTORE_PASS secrets are not set"; exit 1; }
+          if [[ -z "$KEYSTORE_B64" || -z "$KEYSTORE_PASS" ]]; then
+            echo "::warning::Release signing secrets missing; building test artifacts only"
+            exit 0
+          fi
+          umask 077
           echo "$KEYSTORE_B64" | base64 -d > release.jks
           printf %s "$KEYSTORE_PASS" > release.pass
+          echo "publish=true" >> "$GITHUB_OUTPUT"
 
       # v2.12.0 -> versionName 2.12.0, versionCode 21200 (always rises with the tag)
       - name: Version from the tag
@@ -61,14 +67,25 @@ jobs:
       - name: Build
         run: ./build.sh
 
-      # Fixed names too, so https://github.com/AnantPlay/android/releases/latest/download/AnantPlay-TV.apk is always the newest
+      - name: Verify both APKs
+        run: scripts/verify-apks.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apks
+          path: AnantPlay-*.apk
+          if-no-files-found: error
+
+      # Fixed names too, so https://github.com/dictationb1/anantplay-sinhala/releases/latest/download/AnantPlay-TV.apk is always the newest
       # (Fire TV Downloader codes and links point there). The in-app updater only picks the versioned "-TV-" / "-Android-" files.
       - name: Latest copies
+        if: steps.signing.outputs.publish == 'true'
         run: |
           cp "AnantPlay-TV-v$VERSION_NAME.apk" AnantPlay-TV.apk
           cp "AnantPlay-Android-v$VERSION_NAME.apk" AnantPlay-Android.apk
 
       - name: Checksums and signer
+        if: steps.signing.outputs.publish == 'true'
         run: |
           sha256sum AnantPlay-*.apk | tee SHA256SUMS.txt
           for f in AnantPlay-*.apk; do
@@ -76,6 +93,7 @@ jobs:
           done
 
       - name: Publish
+        if: steps.signing.outputs.publish == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
