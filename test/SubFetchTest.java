@@ -252,6 +252,9 @@ public class SubFetchTest {
         check("lang tha", SubFetch.forLang("tha").name().endsWith("874"), true);
         check("code si", SubFetch.languageCode(" si "), "sin");
         check("code eng", SubFetch.languageCode("ENG"), "eng");
+        check("code en", SubFetch.languageCode("en"), "eng");
+        check("code si-LK", SubFetch.languageCode("si-LK"), "sin");
+        check("lang ru", SubFetch.forLang("ru").name(), "windows-1251");
         check("code null", SubFetch.languageCode(null), "");
 
         // an addon still making the file answers 202: RetryLaterException, anything else is a body or an IOException

@@ -31,6 +31,7 @@ public class AuthActivity extends Activity {
             }
         });
         setContentView(web);
+        web.requestFocus();   // a TV remote moves over the page's fields and buttons from the start
         web.loadUrl(getIntent().getStringExtra("url"));
     }
 

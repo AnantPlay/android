@@ -153,10 +153,13 @@ final class SubFetch {
         return null;
     }
 
-    /** A language code lower-cased, with Sinhala's spellings (si, si-LK) as "sin" like the subtitle sources use. */
+    /** A language code lower-cased and as three letters, like the subtitle sources use: "si", "si-LK" and "sin" are all "sin", "en" is "eng". */
     static String languageCode(String lang) {
         String code = lang == null ? "" : lang.trim().toLowerCase(Locale.ROOT);
-        return code.equals("si") || code.startsWith("si-") ? "sin" : code;
+        int dash = code.indexOf('-');
+        if (dash > 0) code = code.substring(0, dash);
+        if (code.length() != 2) return code;
+        try { return new Locale(code).getISO3Language(); } catch (java.util.MissingResourceException e) { return code; }
     }
 
     /** The body of a GET; HTTP 202 (an addon still working on the file) is a RetryLaterException, any other failure an IOException. */
