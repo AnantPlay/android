@@ -163,8 +163,8 @@ public class IptvActivity extends Home {
     void chips() {
         pinState();
         filters.removeAllViews();
-        chipRow(App.t(R.string.iptv_all_categories), counts(true), category, true, v -> { category = v; chips(); filter(query); });
-        chipRow(App.t(R.string.iptv_all_languages), counts(false), language, false, v -> { language = v; chips(); filter(query); });
+        chipRow(App.t(R.string.iptv_all_categories), counts(true), category, true, v -> { category = v; pinState(); filter(query); });
+        chipRow(App.t(R.string.iptv_all_languages), counts(false), language, false, v -> { language = v; pinState(); filter(query); });
     }
 
     /** The categories (as shown) or languages in this list, ranked like the IPTV tab: Iptv.categoryRank / Iptv.rankLanguages. */
@@ -188,18 +188,24 @@ public class IptvActivity extends Home {
         LinearLayout row = row(filters);
         values.add(0, "");
         TextView picked = null;
+        List<TextView> inRow = new ArrayList<>();
         for (String v : values) {
-            TextView c = chip(x -> pick.accept(v));
+            // a pick restyles the row in place: rebuilding it took the chip the remote was on away, and the focus fell to the search box
+            TextView c = chip(x -> { pick.accept(v); for (int i = 0; i < inRow.size(); i++) style(inRow.get(i), values.get(i).equals(v)); });
             c.setText(v.isEmpty() ? allLabel : cats ? groupName(v) : v);
-            boolean on = v.equals(now);
-            c.setTextColor(on ? Color.WHITE : TEXT);
-            c.setBackground(rounded(on ? ACCENT : CARD, dp(22)));
+            style(c, v.equals(now));
             row.addView(c);
-            if (on && !v.isEmpty()) picked = c;
+            inRow.add(c);
+            if (v.equals(now) && !v.isEmpty()) picked = c;
         }
-        // Keep the chosen chip in view (the row is rebuilt after each pick)
+        // Keep the chosen chip in view when the screen opens on one
         TextView keep = picked;
         if (keep != null) row.post(() -> ((android.widget.HorizontalScrollView) row.getParent()).scrollTo(Math.max(0, keep.getLeft() - dp(40)), 0));
+    }
+
+    void style(TextView c, boolean on) {
+        c.setTextColor(on ? Color.WHITE : TEXT);
+        c.setBackground(rounded(on ? ACCENT : CARD, dp(22)));
     }
 
     boolean matches(Iptv.Channel c) {
