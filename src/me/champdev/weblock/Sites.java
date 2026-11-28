@@ -84,6 +84,7 @@ final class Sites {
     }
 
     /** A host without its ending: "7movies.ac" and "7movies.ws" are the same site moved to a new address. */
+    // ponytail: two different sites sharing a name (moonflix.website, moonflix.com) would share rules; key by mirrors if that bites
     static String name(String host) {
         return host.replaceFirst("\\.[^.]+$", "");
     }

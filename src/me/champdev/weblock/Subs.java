@@ -82,7 +82,7 @@ final class Subs {
         if (!subdl.isEmpty()) asks.add(() -> SubOs.subdl(HTTP, subdl, imdb, season, episode, code));
         if (!subsource.isEmpty()) asks.add(() -> SubOs.subsource(HTTP, subsource, imdb, season, episode, code));
         List<List<SubOs.Result>> answers = asks.parallelStream().map(ask -> {
-            try { return ask.call(); } catch (Exception e) { android.util.Log.w("Subs", "search: " + e.getMessage()); return null; }
+            try { return ask.call(); } catch (Exception e) { android.util.Log.w("Subs", "search: " + String.valueOf(e.getMessage()).replaceAll("api_key=[^&\\s]+", "api_key=…")); return null; }
         }).collect(java.util.stream.Collectors.toList());
         List<Sub> out = new ArrayList<>();
         java.util.Set<String> seen = new java.util.HashSet<>();

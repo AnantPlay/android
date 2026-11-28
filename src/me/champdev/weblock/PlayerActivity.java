@@ -2477,7 +2477,10 @@ public class PlayerActivity extends Activity {
         if (player == null || player.isCurrentMediaItemLive() || getIntent().hasExtra("mime")) return;   // live: nothing ahead to fetch
         long from = AudioScan.densest(cues, Math.max(0, player.getCurrentPosition() - 30000));
         SpeechMeter m = scanMeter = new SpeechMeter();
-        String url = streamUrl, headers = getIntent().getStringExtra("headers");
+        String url = streamUrl;
+        Map<String, String> h = new HashMap<>(streamHeaders);
+        h.put("User-Agent", streamUa);   // the way the player asks, its User-Agent too: a CDN that refuses Java's own would refuse the scan
+        String headers = new JSONObject(h).toString();
         boolean dash = getIntent().getBooleanExtra("dash", false);
         App.io.execute(() -> {
             long t0 = android.os.SystemClock.elapsedRealtime();
@@ -2490,7 +2493,8 @@ public class PlayerActivity extends Activity {
     /** A subtitle file's text: a local one, or the page's, asked for the way the player asks (its headers and the site's cookie). Off the main thread. */
     String subtitleText(Uri uri) throws java.io.IOException {
         if ("file".equals(uri.getScheme())) return new String(java.nio.file.Files.readAllBytes(new java.io.File(uri.getPath()).toPath()), java.nio.charset.StandardCharsets.UTF_8);
-        java.net.HttpURLConnection c = Warp.open(uri.toString());
+        // the player's own way: WARP for the internet, straight for a local address (WARP can't reach one)
+        java.net.HttpURLConnection c = Warp.connect(uri.toString(), Warp.proxyFor(String.valueOf(uri.getHost())), 15000, 30000);
         try {
             c.setRequestProperty("User-Agent", streamUa);
             for (Map.Entry<String, String> h : streamHeaders.entrySet()) c.setRequestProperty(h.getKey(), h.getValue());
@@ -2564,7 +2568,7 @@ public class PlayerActivity extends Activity {
             syncSeen = null;
             if (heard == 0 && tries >= 3) { if (syncLoud) say(App.t(R.string.player_subs_no_sound)); syncLoud = false; return; }   // the sound goes past the app (straight to an amplifier)
             if (!more) { if (syncLoud) say(App.t(R.string.player_subs_sync_failed)); syncLoud = false; return; }
-            App.main.postDelayed(syncCheck, 20000);
+            App.main.postDelayed(syncCheck, syncFixed ? 120000 : 20000);   // lined up already: only following it, no hurry
             return;
         }
         // Sure at once when both halves of what was heard say it on their own. Else the same answer again: twice for a clear winner, three
