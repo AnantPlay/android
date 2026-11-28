@@ -138,6 +138,54 @@ final class Catalog {
         return any ? new ArrayList<>(out.values()) : null;
     }
 
+    // ---- ratings: Rotten Tomatoes and the age rating, from Wikidata (open data, no key) ----
+
+    /** Our country -> the Wikidata property of its film rating board. */
+    static final String[][] BOARDS = {{"US", "P1657"}, {"GB", "P2629"}, {"DE", "P1981"}, {"AT", "P1981"}, {"IN", "P6452"}, {"JP", "P2756"}, {"KR", "P3818"},
+        {"AU", "P3156"}, {"FR", "P2758"}, {"ES", "P3306"}, {"NL", "P2684"}, {"IE", "P7573"}, {"PH", "P8889"}, {"ID", "P13773"}, {"HU", "P2363"}, {"RU", "P2637"}};
+
+    /** {Rotten Tomatoes "87%" or "", age rating "PG-13" or ""} for an IMDb id: the viewer's country's board, else the US one, else the UK's. Cached a day. Off the main thread. */
+    static String[] ratings(String imdb, String country) {
+        String[] out = {"", ""};
+        if (imdb == null || !imdb.matches("tt\\d{1,10}")) return out;
+        StringBuilder boards = new StringBuilder();
+        for (String[] b : BOARDS) boards.append("(wdt:").append(b[1]).append(" \"").append(b[0]).append("\")");
+        String q = "SELECT ?k ?v ?w WHERE { ?f wdt:P345 \"" + imdb + "\". { ?f p:P444 ?s. ?s ps:P444 ?v; pq:P447 wd:Q105584. BIND(\"rt\" AS ?k) OPTIONAL { ?s pq:P585 ?w } }"
+            + " UNION { VALUES (?p ?k) {" + boards + "} ?f ?p ?c. ?c rdfs:label ?v. FILTER(lang(?v) = \"en\") } }";
+        try {
+            String url = "https://query.wikidata.org/sparql?format=json&query=" + java.net.URLEncoder.encode(q, "UTF-8");
+            File f = file(url);
+            String text = f.exists() && System.currentTimeMillis() - f.lastModified() < 24 * 3600_000L ? Sites.readAll(new java.io.FileInputStream(f)) : null;
+            if (text == null) {
+                java.net.HttpURLConnection c = Warp.connect(url, java.net.Proxy.NO_PROXY, 6000, 15000);
+                c.setRequestProperty("User-Agent", "AnantPlay (https://github.com/AnantPlay/android)");   // Wikidata asks every client to say who it is
+                c.setRequestProperty("Accept", "application/sparql-results+json");
+                try (java.io.InputStream in = c.getInputStream()) { text = Sites.readAll(in); } finally { c.disconnect(); }
+                try (FileOutputStream o = new FileOutputStream(f)) { o.write(text.getBytes(StandardCharsets.UTF_8)); }
+            }
+            JSONArray rows = new JSONObject(text).getJSONObject("results").getJSONArray("bindings");
+            String when = "", mine = "", us = "", gb = "";
+            String board = country == null ? "" : country.toUpperCase(java.util.Locale.ROOT);
+            for (int i = 0; i < rows.length(); i++) {
+                JSONObject r = rows.getJSONObject(i);
+                String k = r.getJSONObject("k").getString("value"), v = r.getJSONObject("v").getString("value");
+                if (k.equals("rt")) {   // the Tomatometer (a percentage), the newest one when it was measured more than once
+                    String w = r.has("w") ? r.getJSONObject("w").getString("value") : "";
+                    if (v.endsWith("%") && (out[0].isEmpty() || w.compareTo(when) > 0)) { out[0] = v; when = w; }
+                } else {
+                    v = v.replaceFirst("(?i)\\s*(certificate|rating)$", "").trim();
+                    if (k.equals(board)) mine = v;
+                    if (k.equals("US")) us = v;
+                    if (k.equals("GB")) gb = v;
+                }
+            }
+            out[1] = !mine.isEmpty() ? mine : !us.isEmpty() ? us : gb;
+        } catch (IOException | JSONException e) {
+            android.util.Log.w("Catalog", "ratings " + imdb + ": " + e.getMessage());
+        }
+        return out;
+    }
+
     /** A fresh cached copy of a catalog path, else null (no network). */
     static String disk(String path) {
         File f = file(path);

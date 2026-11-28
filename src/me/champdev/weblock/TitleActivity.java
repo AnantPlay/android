@@ -82,10 +82,23 @@ public class TitleActivity extends Home {
         List<String> meta = new ArrayList<>();
         if (!t.year.isEmpty() && !t.year.equals("null")) meta.add(t.year);
         if (!t.runtime.isEmpty()) meta.add(t.runtime);
-        if (!t.rating.isEmpty()) meta.add("★ " + t.rating);
-        TextView line = text(String.join("  ·  ", meta), sp(15, 13), MUTED, false);
-        line.setPadding(0, dp(6), 0, 0);
-        info.addView(line);
+        boolean imdb = t.id.startsWith("tt");   // Cinemeta's rating is IMDb's; Kitsu's (anime) is its own
+        if (!t.rating.isEmpty() && !imdb) meta.add("★ " + t.rating);
+        // year, length, then badges: IMDb, Rotten Tomatoes and the age rating (the last two come from Wikidata a moment later)
+        LinearLayout metaRow = new LinearLayout(this);
+        metaRow.setGravity(Gravity.CENTER_VERTICAL);
+        metaRow.setPadding(0, dp(6), 0, 0);
+        metaRow.addView(text(String.join("  ·  ", meta), sp(15, 13), MUTED, false));
+        if (!t.rating.isEmpty() && imdb) metaRow.addView(badge("IMDb", t.rating, 0xFFF5C518, 0xFF000000, 0));
+        info.addView(metaRow);
+        if (imdb) App.io.execute(() -> {
+            String[] r = Catalog.ratings(t.id, App.region());
+            runOnUiThread(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                if (!r[0].isEmpty()) metaRow.addView(badge(null, r[0], 0, 0, R.drawable.ic_tomato));
+                if (!r[1].isEmpty()) metaRow.addView(badge(r[1], null, 0, 0, 0));
+            });
+        });
         if (!t.genres.isEmpty()) {
             TextView genres = text(t.genres, sp(14, 12), MUTED, false);
             genres.setPadding(0, dp(3), 0, 0);
@@ -127,30 +140,33 @@ public class TitleActivity extends Home {
             col.addView(overview);
         }
         // Who made it and who is in it, where it is from, awards, and for a series whether it still runs and how much there is
-        List<String[]> facts = new ArrayList<>();
-        if (!t.cast.isEmpty()) facts.add(new String[]{App.t(R.string.title_cast), t.cast});
-        if (!t.director.isEmpty()) facts.add(new String[]{App.t(R.string.title_director), t.director});
-        else if (!t.writer.isEmpty()) facts.add(new String[]{App.t(R.string.title_writer), t.writer});
+        // an icon for what each line is (its name stays for screen readers)
+        List<Object[]> facts = new ArrayList<>();
+        if (!t.cast.isEmpty()) facts.add(new Object[]{R.drawable.ic_people, App.t(R.string.title_cast), t.cast});
+        if (!t.director.isEmpty()) facts.add(new Object[]{R.drawable.ic_movie, App.t(R.string.title_director), t.director});
+        else if (!t.writer.isEmpty()) facts.add(new Object[]{R.drawable.ic_edit, App.t(R.string.title_writer), t.writer});
         if (t.series() && !t.episodes.isEmpty()) {
             int n = Catalog.seasons(t);
             String size = App.t(n == 1 ? R.string.title_size_one : R.string.title_size, n, t.episodes.size());
-            facts.add(new String[]{App.t(R.string.title_show), t.status.isEmpty() ? size : size + "  ·  " + t.status});
+            facts.add(new Object[]{R.drawable.ic_tv, App.t(R.string.title_show), t.status.isEmpty() ? size : size + "  ·  " + t.status});
         }
-        if (!t.country.isEmpty()) facts.add(new String[]{App.t(R.string.title_country), t.country});
-        if (!t.awards.isEmpty()) facts.add(new String[]{App.t(R.string.title_awards), t.awards});
+        if (!t.country.isEmpty()) facts.add(new Object[]{R.drawable.ic_language, App.t(R.string.title_country), t.country});
+        if (!t.awards.isEmpty()) facts.add(new Object[]{R.drawable.ic_trophy, App.t(R.string.title_awards), t.awards});
         if (!facts.isEmpty()) {
             LinearLayout box = new LinearLayout(this);
             box.setOrientation(LinearLayout.VERTICAL);
             box.setPadding(0, u(12, 8), 0, 0);
-            for (String[] f : facts) {
-                android.text.SpannableStringBuilder fact = new android.text.SpannableStringBuilder(f[0] + "   ");
-                fact.setSpan(new android.text.style.ForegroundColorSpan(MUTED), 0, f[0].length(), 0);
-                fact.append(f[1]);
-                TextView v = text("", sp(14, 12), TEXT, false);
-                v.setText(fact);
+            for (Object[] f : facts) {
+                TextView v = text((String) f[2], sp(14, 12), TEXT, false);
                 v.setMaxLines(2);
                 v.setEllipsize(TextUtils.TruncateAt.END);
                 v.setPadding(0, dp(2), 0, dp(2));
+                android.graphics.drawable.Drawable d = getDrawable((Integer) f[0]).mutate();
+                d.setTint(MUTED);
+                d.setBounds(0, 0, dp(16), dp(16));
+                v.setCompoundDrawablesRelative(d, null, null, null);
+                v.setCompoundDrawablePadding(dp(10));
+                v.setContentDescription(f[1] + ": " + f[2]);
                 box.addView(v);
             }
             info.addView(box);   // beside the poster, not a block of its own under it
@@ -343,6 +359,37 @@ public class TitleActivity extends Home {
 
     String siteKey() {
         return t.anime ? "watchsite:anime" : "watchsite";
+    }
+
+    /** A small badge after the year: a tag (filled in `bg`, or outlined when bg is 0), then a value; or an icon, then the value. */
+    TextView badge(String tag, String value, int bg, int fg, int icon) {
+        TextView b = text("", sp(13, 12), TEXT, true);
+        android.text.SpannableStringBuilder s = new android.text.SpannableStringBuilder();
+        if (tag != null) {
+            s.append(" ").append(tag).append(" ");
+            if (bg != 0) {
+                s.setSpan(new android.text.style.BackgroundColorSpan(bg), 0, s.length(), 0);
+                s.setSpan(new android.text.style.ForegroundColorSpan(fg), 0, s.length(), 0);
+            }
+        }
+        if (value != null) s.append(tag != null ? "  " : "").append(value);
+        b.setText(s);
+        if (tag != null && bg == 0) {   // the age rating: a box around it
+            android.graphics.drawable.GradientDrawable box = rounded(0, dp(4));
+            box.setStroke(dp(1), MUTED);
+            b.setBackground(box);
+            b.setPadding(dp(2), 0, dp(2), 0);
+        }
+        if (icon != 0) {
+            android.graphics.drawable.Drawable d = getDrawable(icon);
+            d.setBounds(0, 0, dp(16), dp(16));
+            b.setCompoundDrawablesRelative(d, null, null, null);
+            b.setCompoundDrawablePadding(dp(4));
+        }
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-2, -2);
+        lp.leftMargin = dp(12);
+        b.setLayoutParams(lp);
+        return b;
     }
 
     /** A series: a tap only picks the site, Watch and the episodes below play on it. A movie: the tap plays it there. */
