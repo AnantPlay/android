@@ -194,8 +194,23 @@ public class PlayerActivity extends Activity {
             i -> new String[]{list.get(i).name, list.get(i).logo}, i -> { if (list.get(i) != me) playChannel(list.get(i)); }, at - from);
     }
 
-    /** A movie: other movies to go to (the viewer's country's when there are, else the new ones), as the same strip. Picking one opens its page. */
+    /** More like this (Recs): titles of the same kind as the one playing, as a strip; a movie with none gets the popular ones. Picking one opens its page. */
     void moreShelf() {
+        String imdb = getIntent().getStringExtra("imdb"), type = getIntent().getBooleanExtra("series", false) ? "series" : "movie";
+        say(App.t(R.string.home_loading));
+        App.io.execute(() -> {
+            List<Catalog.Title> like = Recs.like(imdb, type);
+            runOnUiThread(() -> {
+                if (isFinishing() || player == null) return;
+                if (!like.isEmpty()) moreShelf(like, App.t(R.string.player_more_like));
+                else if (seriesInfo == null) popularShelf();
+                else say(App.t(R.string.home_nothing_here));
+            });
+        });
+    }
+
+    /** Other movies to go to (the viewer's country's when there are, else the new ones), as the same strip. */
+    void popularShelf() {
         String region = App.region();
         List<Catalog.Title> hit = Catalog.languages(region).length > 0 ? Catalog.cached("movie", "local=" + region) : null;
         if (hit == null || hit.isEmpty()) hit = Catalog.cached("movie", "genre=" + Catalog.NEW);
@@ -204,21 +219,21 @@ public class PlayerActivity extends Activity {
             say(App.t(R.string.home_loading));
             App.io.execute(() -> {
                 List<Catalog.Title> got = Catalog.list("movie", "");
-                runOnUiThread(() -> { if (isFinishing()) return; if (got == null || got.isEmpty()) say(App.t(R.string.home_catalog_offline)); else moreShelf(got); });
+                runOnUiThread(() -> { if (isFinishing()) return; if (got == null || got.isEmpty()) say(App.t(R.string.home_catalog_offline)); else moreShelf(got, App.t(R.string.player_more_watch)); });
             });
             return;
         }
-        moreShelf(hit);
+        moreShelf(hit, App.t(R.string.player_more_watch));
     }
 
-    void moreShelf(List<Catalog.Title> l) {
+    void moreShelf(List<Catalog.Title> l, String heading) {
         String playing = String.valueOf(getIntent().getStringExtra("imdb"));
         List<Catalog.Title> list = new ArrayList<>();
         for (Catalog.Title t : l) if (!t.id.equals(playing) && list.size() < 40) list.add(t);
-        shelf(App.t(R.string.player_more_watch), list.size(), 1, i -> new String[]{list.get(i).name, list.get(i).poster}, i -> {
+        shelf(heading, list.size(), 1, i -> new String[]{list.get(i).name, list.get(i).poster}, i -> {
             Catalog.Title t = list.get(i);
             startActivity(new Intent(this, TitleActivity.class).putExtra("id", t.id).putExtra("type", t.type).putExtra("name", t.name)
-                .putExtra("year", t.year).putExtra("poster", t.poster).putExtra("tmdb", t.tmdb));
+                .putExtra("year", t.year).putExtra("poster", t.poster).putExtra("tmdb", t.tmdb).putExtra("anime", t.anime));
             finish();
         }, -1);
     }
@@ -1841,6 +1856,12 @@ public class PlayerActivity extends Activity {
             labels.add(App.t(R.string.player_downloads));
             acts.add(() -> startActivity(new android.content.Intent(this, DownloadsActivity.class)));
             icons.add(R.drawable.ic_download);
+        }
+        String imdb = getIntent().getStringExtra("imdb");
+        if (imdb != null && imdb.startsWith("tt") && !getIntent().hasExtra("mime")) {
+            labels.add(App.t(R.string.player_more_like));
+            acts.add(this::moreShelf);
+            icons.add(R.drawable.ic_sparkle);
         }
         labels.add(App.t(R.string.player_zoom_now, App.t(ZOOMS[zoom])));
         acts.add(this::cycleZoom);

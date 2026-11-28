@@ -125,4 +125,5 @@
     <string name="player_subs_listening">جارٍ الاستماع إلى الحوار لمطابقة الترجمة…</string>
     <string name="player_subs_no_sound">لا يمكن سماع صوت هذا الفيديو للمزامنة (يذهب مباشرة إلى التلفاز أو السماعة). استخدم التوقيت في الترجمة، الإعدادات</string>
     <string name="player_subs_sync_failed">تعذّرت مطابقة الترجمة مع الكلام. استخدم التوقيت في الترجمة، الإعدادات</string>
+    <string name="player_more_like">المزيد مثل هذا</string>
 </resources>

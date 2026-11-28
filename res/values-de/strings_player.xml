@@ -125,4 +125,5 @@
     <string name="player_subs_listening">Die Dialoge werden angehört, um die Untertitel anzupassen…</string>
     <string name="player_subs_no_sound">Der Ton dieses Videos ist zum Synchronisieren nicht hörbar (er geht direkt an Fernseher oder Lautsprecher). Nutze Timing unter Untertitel, Einstellungen</string>
     <string name="player_subs_sync_failed">Die Untertitel konnten nicht an die Sprache angepasst werden. Nutze Timing unter Untertitel, Einstellungen</string>
+    <string name="player_more_like">Mehr davon</string>
 </resources>
