@@ -337,7 +337,7 @@ public class TitleActivity extends Home {
     Sites.Site chosen() {
         List<Sites.Site> options = options();
         String url = App.prefs.getString(siteKey(), "");
-        for (Sites.Site s : options) if (s.url.equals(url)) return s;
+        for (Sites.Site s : options) if (Sites.same(s.url, url)) return s;
         return options.isEmpty() ? null : options.get(0);
     }
 

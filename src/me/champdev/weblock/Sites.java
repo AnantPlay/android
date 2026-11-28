@@ -39,6 +39,7 @@ final class Sites {
                     for (java.util.Iterator<String> it = o.keys(); it.hasNext(); ) {
                         String host = it.next();
                         if (!deeplinks.has(host)) deeplinks.put(host, o.get(host));
+                        if (!host.startsWith("@") && !deeplinks.has("~" + name(host))) deeplinks.put("~" + name(host), o.get(host));
                     }
                 } catch (JSONException ignored) { }
             }
@@ -68,18 +69,39 @@ final class Sites {
 
     /** Whether the site has an address of this kind ("episode" for one TV episode, "anime" for one anime episode). */
     static boolean hasLink(String siteUrl, String key) {
-        org.json.JSONObject site = deeplinks().optJSONObject(hostOf(siteUrl));
+        org.json.JSONObject site = rules(siteUrl);
         return site != null && !site.optString(key).isEmpty();
     }
 
     /** Whether the site's anime address says Sub or Dub. */
     static boolean hasAudioLink(String siteUrl) {
-        org.json.JSONObject site = deeplinks().optJSONObject(hostOf(siteUrl));
+        org.json.JSONObject site = rules(siteUrl);
         return site != null && site.optString("anime").contains("{audio}");
     }
 
     static String hostOf(String url) {
         return String.valueOf(Uri.parse(url).getHost()).replaceFirst("^www\\.", "");
+    }
+
+    /** A host without its ending: "7movies.ac" and "7movies.ws" are the same site moved to a new address. */
+    static String name(String host) {
+        return host.replaceFirst("\\.[^.]+$", "");
+    }
+
+    /** A site's link rules: by its host, else by the same name under another ending (the list moved it, the table still has the old one). */
+    private static org.json.JSONObject rules(String siteUrl) {
+        org.json.JSONObject all = deeplinks(), hit = all.optJSONObject(hostOf(siteUrl));
+        return hit != null ? hit : all.optJSONObject("~" + name(hostOf(siteUrl)));
+    }
+
+    /** Whether two addresses are the same site, also after it moved to a new ending (a pick saved before the move still counts). */
+    static boolean same(String a, String b) {
+        return a.equals(b) || !a.isEmpty() && !b.isEmpty() && name(hostOf(a)).equals(name(hostOf(b))) && path(a).equals(path(b));
+    }
+
+    private static String path(String url) {
+        String p = Uri.parse(url).getPath();
+        return p == null ? "" : p.replaceFirst("/$", "");
     }
 
     /**
@@ -89,7 +111,7 @@ final class Sites {
      */
     static String link(String siteUrl, String key, Map<String, String> vars) {
         Uri u = Uri.parse(siteUrl);
-        org.json.JSONObject site = deeplinks().optJSONObject(hostOf(siteUrl));
+        org.json.JSONObject site = rules(siteUrl);
         String tpl = site == null ? "" : site.optString(key);
         if (tpl.isEmpty()) return null;
         org.json.JSONObject audio = site.optJSONObject("audio");
