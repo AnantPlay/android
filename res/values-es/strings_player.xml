@@ -126,4 +126,9 @@
     <string name="player_subs_no_sound">No se oye el sonido de este vídeo para sincronizar (va directo a la TV o al altavoz). Usa Sincronización en Subtítulos, Configuración</string>
     <string name="player_subs_sync_failed">No se pudieron ajustar los subtítulos a la voz. Usa Sincronización en Subtítulos, Configuración</string>
     <string name="player_more_like">Más como esto</string>
+    <string name="cast_ask_title">¿Transmitir desde %1$s?</string>
+    <string name="cast_ask_play">Reproducir</string>
+    <string name="cast_ask_always">Permitir siempre</string>
+    <string name="cast_ask_decline">Rechazar</string>
+    <string name="cast_declined">La TV lo rechazó</string>
 </resources>

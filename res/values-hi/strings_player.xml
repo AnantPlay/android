@@ -126,4 +126,9 @@
     <string name="player_subs_no_sound">सिंक के लिए इस वीडियो की आवाज़ सुनाई नहीं दे रही (वह सीधे टीवी या स्पीकर पर जाती है)। सबटाइटल, सेटिंग में टाइमिंग इस्तेमाल करें</string>
     <string name="player_subs_sync_failed">सबटाइटल को संवाद से नहीं मिलाया जा सका। सबटाइटल, सेटिंग में टाइमिंग इस्तेमाल करें</string>
     <string name="player_more_like">इसी तरह के और</string>
+    <string name="cast_ask_title">%1$s से कास्ट?</string>
+    <string name="cast_ask_play">चलाएँ</string>
+    <string name="cast_ask_always">हमेशा अनुमति दें</string>
+    <string name="cast_ask_decline">मना करें</string>
+    <string name="cast_declined">टीवी ने मना कर दिया</string>
 </resources>

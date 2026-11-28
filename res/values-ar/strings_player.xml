@@ -126,4 +126,9 @@
     <string name="player_subs_no_sound">لا يمكن سماع صوت هذا الفيديو للمزامنة (يذهب مباشرة إلى التلفاز أو السماعة). استخدم التوقيت في الترجمة، الإعدادات</string>
     <string name="player_subs_sync_failed">تعذّرت مطابقة الترجمة مع الكلام. استخدم التوقيت في الترجمة، الإعدادات</string>
     <string name="player_more_like">المزيد مثل هذا</string>
+    <string name="cast_ask_title">بث من %1$s؟</string>
+    <string name="cast_ask_play">تشغيل</string>
+    <string name="cast_ask_always">السماح دائمًا</string>
+    <string name="cast_ask_decline">رفض</string>
+    <string name="cast_declined">رفض التلفزيون</string>
 </resources>

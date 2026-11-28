@@ -126,4 +126,9 @@
     <string name="player_subs_no_sound">Der Ton dieses Videos ist zum Synchronisieren nicht hörbar (er geht direkt an Fernseher oder Lautsprecher). Nutze Timing unter Untertitel, Einstellungen</string>
     <string name="player_subs_sync_failed">Die Untertitel konnten nicht an die Sprache angepasst werden. Nutze Timing unter Untertitel, Einstellungen</string>
     <string name="player_more_like">Mehr davon</string>
+    <string name="cast_ask_title">Übertragung von %1$s?</string>
+    <string name="cast_ask_play">Abspielen</string>
+    <string name="cast_ask_always">Immer erlauben</string>
+    <string name="cast_ask_decline">Ablehnen</string>
+    <string name="cast_declined">Der TV hat abgelehnt</string>
 </resources>

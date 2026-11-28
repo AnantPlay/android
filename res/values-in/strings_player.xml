@@ -126,4 +126,9 @@
     <string name="player_subs_no_sound">Suara video ini tidak terdengar untuk sinkronisasi (langsung ke TV atau speaker). Gunakan Waktu di Subtitle, Setelan</string>
     <string name="player_subs_sync_failed">Subtitle tidak bisa disesuaikan dengan ucapan. Gunakan Waktu di Subtitle, Setelan</string>
     <string name="player_more_like">Lainnya yang mirip</string>
+    <string name="cast_ask_title">Transmisi dari %1$s?</string>
+    <string name="cast_ask_play">Putar</string>
+    <string name="cast_ask_always">Selalu izinkan</string>
+    <string name="cast_ask_decline">Tolak</string>
+    <string name="cast_declined">TV menolak</string>
 </resources>

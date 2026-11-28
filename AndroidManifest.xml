@@ -52,6 +52,7 @@
             android:supportsPictureInPicture="true" android:resizeableActivity="true"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|uiMode"/>
         <activity android:name=".Cast$Remote" android:exported="false" android:screenOrientation="portrait"/>
+        <activity android:name=".Cast$Ask" android:exported="false" android:theme="@android:style/Theme.Translucent.NoTitleBar" android:excludeFromRecents="true" android:taskAffinity="" android:launchMode="singleInstance"/>
         <service android:name=".Cast$Keep" android:exported="false" android:foregroundServiceType="connectedDevice"/>
         <service android:name=".DownloadService" android:exported="false" android:foregroundServiceType="dataSync"/>
         <service android:name=".Update$Job" android:permission="android.permission.BIND_JOB_SERVICE" android:exported="false"/>

@@ -130,4 +130,9 @@
     <string name="player_subs_no_sound">Can\'t hear this video\'s sound to sync (it goes straight to the TV or speaker). Use Timing in Subtitles, Settings</string>
     <string name="player_subs_sync_failed">Could not line the subtitles up with the speech. Use Timing in Subtitles, Settings</string>
     <string name="player_more_like">More like this</string>
+    <string name="cast_ask_title">Cast from %1$s?</string>
+    <string name="cast_ask_play">Play</string>
+    <string name="cast_ask_always">Always allow</string>
+    <string name="cast_ask_decline">Decline</string>
+    <string name="cast_declined">The TV declined</string>
 </resources>

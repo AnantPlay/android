@@ -126,4 +126,9 @@
     <string name="player_subs_no_sound">Não dá para ouvir o som deste vídeo para sincronizar (vai direto para a TV ou o alto-falante). Use Sincronia em Legendas, Configurações</string>
     <string name="player_subs_sync_failed">Não foi possível alinhar as legendas com a fala. Use Sincronia em Legendas, Configurações</string>
     <string name="player_more_like">Mais como este</string>
+    <string name="cast_ask_title">Transmitir de %1$s?</string>
+    <string name="cast_ask_play">Reproduzir</string>
+    <string name="cast_ask_always">Sempre permitir</string>
+    <string name="cast_ask_decline">Recusar</string>
+    <string name="cast_declined">A TV recusou</string>
 </resources>

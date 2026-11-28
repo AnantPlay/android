@@ -112,10 +112,11 @@ final class Cast {
             for (int n = 0; n < len; ) { int r = in.read(body, n, len - n); if (r < 0) break; n += r; }
             Uri u = Uri.parse("http://tv" + req[1]);
             JSONObject out;
+            String from = sock.getInetAddress().getHostAddress();
             switch (u.getPath() == null ? "" : u.getPath()) {
-                case "/play": out = play(new JSONObject(new String(body, StandardCharsets.UTF_8))); break;
+                case "/play": out = play(new JSONObject(new String(body, StandardCharsets.UTF_8)), from); break;
                 case "/status": out = onMain(Cast::status); break;
-                case "/do": out = onMain(() -> act(u.getQueryParameter("a"), u.getQueryParameter("to"))); break;
+                case "/do": out = accepted.contains(from) ? onMain(() -> act(u.getQueryParameter("a"), u.getQueryParameter("to"))) : new JSONObject().put("ok", false); break;
                 default: out = new JSONObject().put("ok", false);
             }
             OutputStream o = sock.getOutputStream();
@@ -139,10 +140,71 @@ final class Cast {
         return f.get(3, TimeUnit.SECONDS);
     }
 
-    /** Opens the player with what the phone sent; answers whether it really opened (Android may block a closed app). */
-    static JSONObject play(JSONObject m) throws Exception {
+    static final java.util.Set<String> accepted = java.util.Collections.synchronizedSet(new java.util.HashSet<>());   // phones (addresses) let in since the app started
+    static java.util.concurrent.CompletableFuture<Integer> asking;   // the question on screen now: 1 play, 2 always, 0 no
+
+    /** A phone not let in before: the TV asks (Play, Always allow, Decline), up to 40 s. True when it may play. */
+    static boolean allowed(JSONObject m, String from) throws Exception {
+        String name = m.optString("from", from);   // phones before 2.25 send no name: their address stands in
+        if (accepted.contains(from) || App.prefs.getStringSet("castTrusted", java.util.Collections.emptySet()).contains(name)) { accepted.add(from); return true; }
+        java.util.concurrent.CompletableFuture<Integer> q = new java.util.concurrent.CompletableFuture<>();
+        synchronized (Cast.class) {
+            if (asking != null && !asking.isDone()) return false;   // one question at a time: a second phone meanwhile is turned away
+            asking = q;
+        }
+        long asked = android.os.SystemClock.elapsedRealtime();
+        App.main.post(() -> App.app.startActivity(new Intent(App.app, Ask.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            .putExtra("name", name).putExtra("title", m.optString("title"))));
+        for (int n = 0; n < 30 && Ask.shownAt < asked; n++) Thread.sleep(100);
+        if (Ask.shownAt < asked) { q.complete(0); throw new Blocked(); }   // Android kept the question off the screen (a closed app may not open one)
+        int a;
+        try { a = q.get(40, TimeUnit.SECONDS); } catch (java.util.concurrent.TimeoutException e) { a = 0; }
+        finally { Ask.close(); }
+        if (a == 2) {
+            java.util.Set<String> t = new java.util.HashSet<>(App.prefs.getStringSet("castTrusted", java.util.Collections.emptySet()));
+            t.add(name);
+            App.prefs.edit().putStringSet("castTrusted", t).apply();
+        }
+        if (a > 0) accepted.add(from);
+        return a > 0;
+    }
+
+    /** The TV's question: Cast from Pixel 9a? with the title, and Play (the remote starts on it), Always allow, Decline. */
+    static final class Blocked extends Exception { }
+
+    public static class Ask extends Activity {
+        static java.lang.ref.WeakReference<Ask> shown;
+        static volatile long shownAt;
+
+        @Override protected void onCreate(android.os.Bundle b) {
+            super.onCreate(b);
+            shown = new java.lang.ref.WeakReference<>(this);
+            shownAt = android.os.SystemClock.elapsedRealtime();
+            java.util.concurrent.CompletableFuture<Integer> q = asking;
+            android.app.AlertDialog d = new android.app.AlertDialog.Builder(this).setTitle(App.t(R.string.cast_ask_title, getIntent().getStringExtra("name")))
+                .setMessage(getIntent().getStringExtra("title"))
+                .setPositiveButton(App.t(R.string.cast_ask_play), (x, w) -> q.complete(1))
+                .setNeutralButton(App.t(R.string.cast_ask_always), (x, w) -> q.complete(2))
+                .setNegativeButton(App.t(R.string.cast_ask_decline), (x, w) -> q.complete(0))
+                .setOnDismissListener(x -> { q.complete(0); finish(); }).create();
+            d.show();
+            d.getButton(android.app.AlertDialog.BUTTON_POSITIVE).requestFocus();
+        }
+
+        static void close() {
+            App.main.post(() -> { Ask a = shown == null ? null : shown.get(); if (a != null && !a.isFinishing()) a.finish(); });
+        }
+    }
+
+    /** Opens the player with what the phone sent, once the TV said yes; answers whether it really opened (Android may block a closed app). */
+    static JSONObject play(JSONObject m, String from) throws Exception {
         String url = m.optString("url");
         if (!url.startsWith("http://") && !url.startsWith("https://")) return new JSONObject().put("ok", false).put("why", "bad link");
+        try {
+            if (!allowed(m, from)) return new JSONObject().put("ok", false).put("why", "declined");
+        } catch (Blocked e) {
+            return new JSONObject().put("ok", false).put("why", "blocked");
+        }
         Intent i = new Intent(App.app, PlayerActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         for (Iterator<String> it = m.keys(); it.hasNext(); ) {
             String k = it.next();
@@ -326,9 +388,11 @@ final class Cast {
         App2Tv(String hostPort) { tv = hostPort; }
 
         @Override public String start(JSONObject video) throws Exception {
-            JSONObject r = call(tv, "POST", "/play", video);
+            video.put("from", tvName(App.app));   // the name the TV's question shows
+            JSONObject r = call(tv, "POST", "/play", video, 50000);   // the TV may be asking (40 s at most)
             if (r.optBoolean("ok")) return null;
-            return App.t("blocked".equals(r.optString("why")) ? R.string.cast_blocked : R.string.cast_tv_cant_open);
+            String why = r.optString("why");
+            return App.t(why.equals("blocked") ? R.string.cast_blocked : why.equals("declined") ? R.string.cast_declined : R.string.cast_tv_cant_open);
         }
 
         @Override public JSONObject status() throws Exception { return call(tv, "GET", "/status", null); }
@@ -354,9 +418,13 @@ final class Cast {
     }
 
     static JSONObject call(String tv, String method, String path, JSONObject body) throws IOException, org.json.JSONException {
+        return call(tv, method, path, body, 8000);
+    }
+
+    static JSONObject call(String tv, String method, String path, JSONObject body, int readMs) throws IOException, org.json.JSONException {
         HttpURLConnection c = (HttpURLConnection) new URL("http://" + tv + path).openConnection(java.net.Proxy.NO_PROXY);
         c.setConnectTimeout(4000);
-        c.setReadTimeout(8000);
+        c.setReadTimeout(readMs);
         c.setRequestMethod(method);
         if (body != null) {
             c.setDoOutput(true);
