@@ -1115,6 +1115,7 @@ public class PlayerActivity extends Activity {
         } catch (Exception ignored) { }
         streamUa = ua;
         streamHeaders = headers;
+        streamUrl = url;
         DefaultHttpDataSource.Factory http = new DefaultHttpDataSource.Factory().setUserAgent(ua).setAllowCrossProtocolRedirects(true)
             .setConnectTimeoutMs(15000).setReadTimeoutMs(30000).setDefaultRequestProperties(headers);
         // The WebView's cookie for each request's own host, never one site's session sent to another
@@ -2422,6 +2423,7 @@ public class PlayerActivity extends Activity {
     void startSync(MediaItem.SubtitleConfiguration conf) {
         syncConf = conf;
         syncCues = null;
+        scanMeter = null;
         syncRate = 1;
         syncTries = 0;
         syncFixed = false;
@@ -2437,6 +2439,7 @@ public class PlayerActivity extends Activity {
                     syncText = text;
                     syncCues = cues;
                     App.main.postDelayed(syncCheck, syncLoud ? 0 : 20000);
+                    scanAhead(conf, cues);
                 });
             } catch (java.io.IOException e) {
                 Log.w("SubSync", "can't read " + conf.uri + ": " + e.getMessage());
@@ -2445,7 +2448,23 @@ public class PlayerActivity extends Activity {
     }
 
     Map<String, String> streamHeaders = new HashMap<>();
-    String streamUa = "";
+    String streamUa = "", streamUrl = "";
+    SpeechMeter scanMeter;   // the sound fetched ahead for the file being lined up (AudioScan), merged with what has played
+
+    /** Fetches and measures 2.5 minutes of sound around the densest dialogue of the next 15 minutes, as fast as it comes; checks at once when done. */
+    void scanAhead(MediaItem.SubtitleConfiguration conf, List<long[]> cues) {
+        if (player == null || player.isCurrentMediaItemLive() || getIntent().hasExtra("mime")) return;   // live: nothing ahead to fetch
+        long from = AudioScan.densest(cues, Math.max(0, player.getCurrentPosition() - 30000));
+        SpeechMeter m = scanMeter = new SpeechMeter();
+        String url = streamUrl, headers = getIntent().getStringExtra("headers");
+        boolean dash = getIntent().getBooleanExtra("dash", false);
+        App.io.execute(() -> {
+            long t0 = android.os.SystemClock.elapsedRealtime();
+            boolean ok = AudioScan.scan(url, headers, dash, Math.max(0, from - 20000), from + 130000, m, () -> syncConf != conf || isFinishing());
+            Log.i("SubSync", "scan " + (ok ? "done" : "not possible") + " in " + (android.os.SystemClock.elapsedRealtime() - t0) + " ms, from " + from / 1000 + " s");
+            runOnUiThread(() -> { if (ok && syncConf == conf && Subs.delayMs == syncSet) { App.main.removeCallbacks(syncCheck); App.main.post(syncCheck); } });
+        });
+    }
 
     /** A subtitle file's text: a local one, or the page's, asked for the way the player asks (its headers and the site's cookie). Off the main thread. */
     String subtitleText(Uri uri) throws java.io.IOException {
@@ -2478,28 +2497,47 @@ public class PlayerActivity extends Activity {
     /** Every 20 s until the lines fit the speech (twice running), then every 2 minutes to follow it (the frame rate shows over a longer stretch). Never once you set the timing yourself. */
     final Runnable syncCheck = new Runnable() {
         @Override public void run() {
+            App.main.removeCallbacks(this);
             if (player == null || isFinishing() || syncCues == null || Subs.delayMs != syncSet) return;
+            if (syncBusy) { syncAgain = true; return; }   // one check at a time: this one runs when the one under way is back
+            syncBusy = true;
             float[] level = meter.snapshot();
+            if (scanMeter != null) { float[] ahead = scanMeter.level; for (int i = 0; i < level.length; i++) if (level[i] < 0) level[i] = ahead[i]; }
             // only the stretch around where you are: a print with a cut or a slow drift has another offset an hour later
             int at = (int) (player.getCurrentPosition() / SubSync.BIN_MS);
-            for (int i = 0; i < level.length; i++) if (i < at - 6000 || i > at + 300) level[i] = -1;
+            for (int i = 0; i < level.length; i++) if (i < at - 6000 || i > at + 9000) level[i] = -1;
             List<long[]> cues = syncCues;
             MediaItem.SubtitleConfiguration conf = syncConf;
             int tries = ++syncTries;
             App.io.execute(() -> {
                 int heard = 0;
                 for (float v : level) if (v >= 0) heard++;
-                SubSync.Fit fit = SubSync.fit(level, cues);
-                Log.i("SubSync", (heard / 10) + " s heard: " + (fit == null ? "not sure" : fit.offsetMs + " ms x" + fit.rate) + " | " + SubSync.why);
+                SubSync.Fit found = null;
+                boolean both = false;
+                try {
+                    found = SubSync.fit(level, cues);
+                    Log.i("SubSync", (heard / 10) + " s heard: " + (found == null ? "not sure" : found.offsetMs + " ms x" + found.rate) + " | " + SubSync.why);
+                    both = found != null && SubSync.halvesAgree(level, cues, found);   // each half of what was heard says the same on its own
+                } catch (RuntimeException e) {
+                    Log.w("SubSync", "fit", e);   // the next check still comes
+                }
+                SubSync.Fit fit = found;
+                boolean halves = both;
                 int seconds = heard / 10;
-                runOnUiThread(() -> { if (syncConf == conf && Subs.delayMs == syncSet && player != null && !isFinishing()) synced(fit, seconds, tries); });
+                runOnUiThread(() -> {
+                    syncBusy = false;
+                    if (syncConf == conf && Subs.delayMs == syncSet && player != null && !isFinishing()) synced(fit, seconds, tries, halves);
+                    if (syncAgain) { syncAgain = false; App.main.post(syncCheck); }
+                });
             });
         }
     };
 
     SubSync.Fit syncSeen;   // the last check's answer: a change is made only when the next check, with more heard, says the same
+    int syncAgree, syncFrom;   // how many checks in a row said it, and how much had been heard (s) at the first of them
+    boolean syncBusy, syncAgain;   // a check is under way; another was asked for meanwhile
 
-    void synced(SubSync.Fit fit, int heard, int tries) {
+    void synced(SubSync.Fit fit, int heard, int tries, boolean halves) {
         boolean more = syncFixed || tries < 60;   // unsure: about 20 minutes of trying; lined up: it keeps following
         if (fit == null) {
             syncSeen = null;
@@ -2508,9 +2546,15 @@ public class PlayerActivity extends Activity {
             App.main.postDelayed(syncCheck, 20000);
             return;
         }
-        boolean confirmed = syncSeen != null && syncSeen.rate == fit.rate && Math.abs(syncSeen.offsetMs - fit.offsetMs) <= 500;
+        // Sure at once when both halves of what was heard say it on their own. Else the same answer again: twice for a clear winner, three
+        // times with 30 s more heard for a weaker one (checks share most of what they heard; a chance peak moves as new sound comes in)
+        boolean same = syncSeen != null && syncSeen.rate == fit.rate && Math.abs(syncSeen.offsetMs - fit.offsetMs) <= 500;
+        syncAgree = same ? syncAgree + 1 : 1;
+        if (!same) syncFrom = heard;
+        boolean confirmed = halves || same && fit.sharp >= SubSync.SHARP + 1 || syncAgree >= 3 && heard - syncFrom >= 30;
         syncSeen = fit;
-        if (!confirmed) { App.main.postDelayed(syncCheck, 15000); return; }
+        if (!confirmed) { App.main.postDelayed(syncCheck, 10000); return; }
+        Log.i("SubSync", "lined up: " + fit.offsetMs + " ms x" + fit.rate + " after " + heard + " s heard");
         if (fit.rate != syncRate) stretchSubtitle(fit);
         else if (Math.abs(fit.offsetMs - Subs.delayMs) >= (syncFixed ? 400 : 250)) {
             boolean jump = Math.abs(fit.offsetMs - Subs.delayMs) > 5000;

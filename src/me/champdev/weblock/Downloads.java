@@ -685,7 +685,7 @@ final class Downloads {
 
 
     /** The address (as written) of the audio playlist of a group in a main playlist: the default one, else the first. Null when the sound is in the picture's own pieces. */
-    private static String audioUri(String text, String group) {
+    static String audioUri(String text, String group) {
         if (group == null) return null;
         String first = null;
         for (String raw : text.split("\\r?\\n")) {
@@ -1341,7 +1341,7 @@ final class Downloads {
         }
     }
 
-    private static byte[] segment(Item it, Seg s, Map<String, byte[]> keys) throws Exception {
+    static byte[] segment(Item it, Seg s, Map<String, byte[]> keys) throws Exception {
         byte[] data = get(it, s.url, s.from, s.len);
         if (s.key == null) return data;
         byte[] key = keys.get(s.key);
@@ -1457,7 +1457,7 @@ final class Downloads {
         throw new IOException("too many redirects");
     }
 
-    private static String fetchText(Item it, String url) throws IOException {
+    static String fetchText(Item it, String url) throws IOException {
         HttpURLConnection c = connect(it, url, -1, -1);
         try {
             if (c.getResponseCode() != 200) throw new IOException("HTTP " + c.getResponseCode());
@@ -1479,7 +1479,7 @@ final class Downloads {
     }
 
     /** A whole resource, or `len` bytes of it from `from`: a piece of an HLS or DASH stream that is a range of a bigger file. */
-    private static byte[] get(Item it, String url, long from, long len) throws IOException {
+    static byte[] get(Item it, String url, long from, long len) throws IOException {
         IOException last = null;
         for (int attempt = 0; attempt < 5; attempt++) {
             if (it.stop) throw new Stopped();

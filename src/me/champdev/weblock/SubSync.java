@@ -11,17 +11,18 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Lines a subtitle file up with the video's speech (ffsubsync's idea, small): the player measures how loud the dialogue band
+ * Lines a subtitle file up with the video's speech (ffsubsync's idea, small): the player measures how much voiced speech
  * is every 0.1 s (SpeechMeter); each bin is taken against the 2 s around it, so pauses stand out and a loud scene doesn't pull
  * the lines to it. The file's lines are tried at every shift up to 4 minutes either way and at the frame-rate stretches; the
  * place where the lines sit on the louder bins wins when it stands well clear of every other. Plain Java (test/SubSyncTest.java).
  * Checked against real films (2026-11): the sound of Tears of Steel and His Girl Friday run through SpeechMeter, their
- * subtitle releases shifted and stretched; at SHARP 6 no wrong answer, the raw-loudness version was wrong almost always.
+ * subtitle releases shifted and stretched; with SpeechMeter's voiced speech band, at SHARP 5 no wrong answer in 150 tries
+ * (raw loudness: wrong almost always). A change is still made only when two checks agree (or both halves of what was heard).
  */
 final class SubSync {
     static final int BIN_MS = 100, RANGE_MS = 240_000;
     static final int LOCAL = 20;   // bins either side a bin's loudness is measured against
-    static double SHARP = 6;
+    static double SHARP = 5;
     /** What the last fit saw, per rate (for the log). */
     static String why = "";
 
@@ -57,11 +58,24 @@ final class SubSync {
     /** Where a file's lines belong: a line timed t (ms) shows at t * rate + offsetMs of the video. */
     static final class Fit {
         final long offsetMs;
-        final double rate;
+        final double rate, sharp;   // sharp: how far the winner stood above every other place, in standard deviations
 
-        Fit(long offsetMs, double rate) { this.offsetMs = offsetMs; this.rate = rate; }
+        Fit(long offsetMs, double rate, double sharp) { this.offsetMs = offsetMs; this.rate = rate; this.sharp = sharp; }
 
         long at(long t) { return Math.round(t * rate) + offsetMs; }
+    }
+
+    /** Whether the first and the second half of what was measured, each fitted on its own, land on the same place (a check that needs no waiting). */
+    static boolean halvesAgree(float[] level, List<long[]> cues, Fit fit) {
+        int measured = 0;
+        for (float v : level) if (v >= 0) measured++;
+        float[] a = level.clone(), b = level.clone();
+        for (int i = 0, k = 0; i < level.length; i++) if (level[i] >= 0) { if (k++ < measured / 2) b[i] = -1; else a[i] = -1; }
+        for (float[] half : new float[][]{a, b}) {
+            Fit h = fit(half, cues);
+            if (h == null || h.rate != fit.rate || Math.abs(h.offsetMs - fit.offsetMs) > 500) return false;
+        }
+        return true;
     }
 
     /** A file made for another frame rate drifts: 25 fps (PAL) against 23.976 (film and web) is 3.7 minutes over 90. */
@@ -148,7 +162,7 @@ final class SubSync {
             if (rate == 1) bestOne = sharp;
             if (sharp > (rate == 1 ? bestSharp : Math.max(bestSharp, bestOne + 1))) {
                 bestSharp = sharp;
-                best = new Fit((long) (top - range) * BIN_MS, rate);
+                best = new Fit((long) (top - range) * BIN_MS, rate, sharp);
             }
         }
         return best;
