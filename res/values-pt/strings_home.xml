@@ -237,4 +237,9 @@
     <string name="home_documentaries">Documentários</string>
     <string name="home_swipe_controls">Deslizar para brilho e volume</string>
     <string name="home_swipe_controls_help">Deslize para cima ou para baixo à esquerda da imagem para o brilho, à direita para o volume</string>
+    <string name="subs_subdl">Chave do SubDL</string>
+    <string name="subs_subdl_help">Sua própria chave grátis do subdl.com (Account, API): as legendas do SubDL entram na busca. Vazio = desligado.</string>
+    <string name="subs_subsource">Chave do Subsource</string>
+    <string name="subs_subsource_help">Sua própria chave grátis do subsource.net (Dashboard, API): as legendas do Subsource entram na busca. Vazio = desligado.</string>
+    <string name="subs_key_added">Adicionada</string>
 </resources>

@@ -21,14 +21,20 @@ final class Subs {
     static final class Sub {
         String url, lang, release;
         String encoding = "", source = "OpenSubtitles";
-        boolean hearingImpaired;
+        boolean hearingImpaired, ai;
+        int season, episode;   // the episode it was found for: a season's zip gives that one's file
+    }
+
+    /** Settings: your own SubDL / Subsource keys ("" = none); with one, that site's files join the search. */
+    static String key(String pref) {
+        return App.prefs.getString(pref, "").trim();
     }
 
     // ---- Search and download (OpenSubtitles, per language) ----
 
     /** OpenSubtitles' language codes (ISO 639-2/B, plus pob) for the language list; the rest of the world can type nothing, so this is long. */
-    static final String[] LANGS = ("ara,ben,bul,chi,hrv,cze,dan,dut,eng,est,fin,fre,ger,ell,heb,hin,hun,ind,ita,jpn,kan,kor,lav,lit,"
-        + "may,mal,mar,nor,per,pol,por,pob,rum,rus,scc,sin,slo,slv,spa,swe,tam,tel,tha,tur,ukr,urd,vie").split(",");
+    static final String[] LANGS = ("ara,ben,bul,chi,hrv,cze,dan,dut,eng,est,fin,fre,ger,ell,guj,heb,hin,hun,ind,ita,jpn,kan,kor,lav,lit,"
+        + "may,mal,mar,nor,pan,per,pol,por,pob,rum,rus,scc,sin,slo,slv,spa,swe,tam,tel,tha,tur,ukr,urd,vie").split(",");
 
     /** The /T spellings Android uses (deu, fra) as OpenSubtitles' /B ones (ger, fre). */
     static String osCode(String iso3) {
@@ -57,10 +63,10 @@ final class Subs {
     };
 
     /**
-     * Files in one language for a movie (season 0) or episode: your subtitle addon's when you set one (Settings), else
-     * OpenSubtitles' (most downloaded first), then SubDL's when you
-     * gave a key (single episodes only: a season pack's zip holds the wrong ones). Falls back to the Stremio addon's sample
-     * when OpenSubtitles can't be reached. Null when nothing could be asked. Off the main thread.
+     * Files in one language for a movie (season 0) or episode: your subtitle addon's when you set one and it has some (Settings),
+     * else OpenSubtitles' (most downloaded first), TheSubtitleDB's (machine-made ones last), then SubDL's and Subsource's when you
+     * gave a key, asked at once, the same release from two places listed once. The Stremio addon's sample stands in for
+     * OpenSubtitles when it can't be reached. Null when nothing could be asked. Off the main thread.
      */
     static List<Sub> search(String imdb, int season, int episode, String lang) {
         String code = osCode(lang);
@@ -69,22 +75,40 @@ final class Subs {
             List<Sub> custom = find(addon.replaceFirst("/manifest\\.json$", "").replaceFirst("/+$", "") + "/subtitles/", imdb, season, episode, code);
             if (custom != null && !custom.isEmpty()) return custom;
         }
+        String subdl = key("subdlKey"), subsource = key("subsourceKey");
+        List<java.util.concurrent.Callable<List<SubOs.Result>>> asks = new ArrayList<>();
+        asks.add(() -> SubOs.search(HTTP, imdb, season, episode, code));
+        asks.add(() -> SubOs.theSubtitleDb(HTTP, imdb, season, episode, code));
+        if (!subdl.isEmpty()) asks.add(() -> SubOs.subdl(HTTP, subdl, imdb, season, episode, code));
+        if (!subsource.isEmpty()) asks.add(() -> SubOs.subsource(HTTP, subsource, imdb, season, episode, code));
+        List<List<SubOs.Result>> answers = asks.parallelStream().map(ask -> {
+            try { return ask.call(); } catch (Exception e) { android.util.Log.w("Subs", "search: " + e.getMessage()); return null; }
+        }).collect(java.util.stream.Collectors.toList());
         List<Sub> out = new ArrayList<>();
+        java.util.Set<String> seen = new java.util.HashSet<>();
         boolean asked = false;
-        try {
-            for (SubOs.Result r : SubOs.search(HTTP, imdb, season, episode, code)) {
+        for (List<SubOs.Result> list : answers) {
+            if (list == null) continue;
+            asked = true;
+            for (SubOs.Result r : list) {
+                // ponytail: same release name = same file; two different files of one release name lose one (rare)
+                if (!r.release.isEmpty() && !seen.add(r.release.toLowerCase(Locale.ROOT).replaceFirst("\\.(srt|ass|ssa|vtt|zip)$", ""))) continue;
                 Sub s = new Sub();
                 s.url = r.url;
                 s.lang = r.lang.isEmpty() ? code : SubFetch.languageCode(r.lang);
                 s.release = r.release;
-                s.encoding = r.encoding;
+                s.encoding = r.encoding == null ? "" : r.encoding;
                 s.hearingImpaired = r.hearingImpaired;
+                s.ai = r.ai;
+                s.source = r.source;
+                s.season = season;
+                s.episode = episode;
                 out.add(s);
             }
-            asked = true;
-        } catch (java.io.IOException e) {
+        }
+        if (answers.get(0) == null) {   // OpenSubtitles down: its Stremio addon's sample instead
             List<Sub> sample = find(BASE, imdb, season, episode, code);
-            if (sample != null) return sample;
+            if (sample != null) { out.addAll(0, sample); asked = true; }
         }
         return asked ? out : null;
     }
@@ -97,7 +121,7 @@ final class Subs {
             java.net.HttpURLConnection c = Warp.open(url);
             c.setRequestProperty("User-Agent", SubOs.UA);
             return SubFetch.openDownload(c);   // a 202 (an addon still translating) comes as RetryLaterException
-        }, s.url, s.encoding, s.lang, dir);
+        }, s.url, s.encoding, s.lang, dir, s.season, s.episode);
     }
 
     /** Settings value: "Off", else the addon's host. */
@@ -178,6 +202,9 @@ final class Subs {
             s.release = o.optString("release");
             s.encoding = o.optString("encoding");
             s.source = o.optString("source", "OpenSubtitles");
+            s.ai = o.optBoolean("ai");
+            s.season = o.optInt("s");
+            s.episode = o.optInt("e");
             return s;
         } catch (org.json.JSONException e) {
             return null;
@@ -209,7 +236,8 @@ final class Subs {
         try {
             JSONObject all = new JSONObject(App.prefs.getString("subPicks", "{}"));
             all.remove(key);
-            if (s != null) all.put(key, new JSONObject().put("url", s.url).put("lang", s.lang).put("release", s.release).put("encoding", s.encoding).put("source", s.source));
+            if (s != null) all.put(key, new JSONObject().put("url", s.url).put("lang", s.lang).put("release", s.release).put("encoding", s.encoding).put("source", s.source)
+                .put("ai", s.ai).put("s", s.season).put("e", s.episode));
             // Android's JSONObject keeps insertion order: the first keys are the oldest
             while (all.length() > 300) all.remove(all.keys().next());
             android.content.SharedPreferences.Editor e = App.prefs.edit().putString("subPicks", all.toString());
@@ -422,6 +450,16 @@ final class Subs {
             done.accept(value);
             dialog.dismiss();
         });
+    }
+
+    /** Settings, SubDL / Subsource key: asks for it (empty clears it), then `done` runs. */
+    static void editKey(android.app.Activity a, String title, String pref, Runnable done) {
+        android.widget.EditText in = WebActivity.field(a, "", android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+        in.setText(key(pref));
+        in.setSingleLine(true);
+        new android.app.AlertDialog.Builder(a).setTitle(title).setView(WebActivity.box(a, in))
+            .setPositiveButton(android.R.string.ok, (d, w) -> { App.prefs.edit().putString(pref, in.getText().toString().trim()).apply(); done.run(); })
+            .setNegativeButton(android.R.string.cancel, null).show();
     }
 
     /** The file name (without its extension): whatever is typed is kept, minus what a file system refuses. `done` gets the name, or the old one if it was cancelled. */

@@ -121,4 +121,8 @@
     <string name="player_channels">Canais</string>
     <string name="player_more_watch">Mais para assistir</string>
     <string name="player_auto_up_to">Automático · até %1$s</string>
+    <string name="player_subs_sync">Sincronizar com o áudio</string>
+    <string name="player_subs_listening">Ouvindo o diálogo para alinhar as legendas…</string>
+    <string name="player_subs_no_sound">Não dá para ouvir o som deste vídeo para sincronizar (vai direto para a TV ou o alto-falante). Use Sincronia em Legendas, Configurações</string>
+    <string name="player_subs_sync_failed">Não foi possível alinhar as legendas com a fala. Use Sincronia em Legendas, Configurações</string>
 </resources>

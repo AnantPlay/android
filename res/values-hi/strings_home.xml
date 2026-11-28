@@ -237,4 +237,9 @@
     <string name="home_documentaries">डॉक्यूमेंट्री</string>
     <string name="home_swipe_controls">स्वाइप से चमक और आवाज़</string>
     <string name="home_swipe_controls_help">चमक के लिए तस्वीर के बाईं ओर, आवाज़ के लिए दाईं ओर ऊपर या नीचे स्वाइप करें</string>
+    <string name="subs_subdl">SubDL की</string>
+    <string name="subs_subdl_help">subdl.com (Account, API) से अपनी मुफ़्त की: SubDL के सबटाइटल भी खोज में आएँगे। खाली = बंद।</string>
+    <string name="subs_subsource">Subsource की</string>
+    <string name="subs_subsource_help">subsource.net (Dashboard, API) से अपनी मुफ़्त की: Subsource के सबटाइटल भी खोज में आएँगे। खाली = बंद।</string>
+    <string name="subs_key_added">जोड़ी गई</string>
 </resources>

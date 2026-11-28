@@ -121,4 +121,8 @@
     <string name="player_channels">चैनल</string>
     <string name="player_more_watch">और देखें</string>
     <string name="player_auto_up_to">ऑटो · %1$s तक</string>
+    <string name="player_subs_sync">ऑडियो से सिंक करें</string>
+    <string name="player_subs_listening">सबटाइटल मिलाने के लिए संवाद सुना जा रहा है…</string>
+    <string name="player_subs_no_sound">सिंक के लिए इस वीडियो की आवाज़ सुनाई नहीं दे रही (वह सीधे टीवी या स्पीकर पर जाती है)। सबटाइटल, सेटिंग में टाइमिंग इस्तेमाल करें</string>
+    <string name="player_subs_sync_failed">सबटाइटल को संवाद से नहीं मिलाया जा सका। सबटाइटल, सेटिंग में टाइमिंग इस्तेमाल करें</string>
 </resources>

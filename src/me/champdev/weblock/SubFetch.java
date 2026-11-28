@@ -34,7 +34,12 @@ final class SubFetch {
     }
 
     static Fetched fetch(SubOs.Http http, String url, String encodingHint, String lang, File dir) throws IOException {
-        String key = sha1(url);
+        return fetch(http, url, encodingHint, lang, dir, 0, 0);
+    }
+
+    /** For an episode (season, episode > 0) a zip holding a whole season gives that episode's file, never another one. */
+    static Fetched fetch(SubOs.Http http, String url, String encodingHint, String lang, File dir, int season, int episode) throws IOException {
+        String key = sha1(episode > 0 ? url + "#" + season + "x" + episode : url);
         for (String e : new String[]{"srt", "ass", "vtt"}) {
             File f = new File(dir, key + "." + e);
             if (f.length() > 0) return result(f, e, "UTF-8");
@@ -49,7 +54,7 @@ final class SubFetch {
                 b = SubOs.read(z, MAX, "unpacked subtitle");
             }
         } else if (b.length > 3 && b[0] == 'P' && b[1] == 'K' && b[2] == 3 && b[3] == 4) {
-            Object[] best = unzip(b);
+            Object[] best = unzip(b, season, episode);
             b = (byte[]) best[0];
             entryExt = (String) best[1];
         }
@@ -89,11 +94,16 @@ final class SubFetch {
         return r;
     }
 
-    /** The best subtitle in a zip: .srt, then .ass/.ssa, then .vtt (nfo, txt, url and the rest are skipped). Entry names are only read for their extension. */
-    private static Object[] unzip(byte[] zip) throws IOException {
+    /**
+     * The best subtitle in a zip: .srt, then .ass/.ssa, then .vtt (nfo, txt, url and the rest are skipped). Names are read for their
+     * extension and, for an episode, to find its file in a season's zip (S01E02, 1x02, E02, "02 Title"); none of them fits = an error.
+     */
+    private static Object[] unzip(byte[] zip, int season, int episode) throws IOException {
         byte[] best = null;
         String bestExt = "";
-        int bestRank = 0, left = MAX;
+        int bestRank = 0, left = MAX, subtitles = 0;
+        boolean bestFits = false;
+        java.util.regex.Pattern ep = episode <= 0 ? null : episodeName(season, episode);
         // Latin-1 names never fail to decode (release names in CP850/CP1252 are common); we only look at the extension
         try (ZipInputStream z = new ZipInputStream(new ByteArrayInputStream(zip), StandardCharsets.ISO_8859_1)) {
             for (ZipEntry e; (e = z.getNextEntry()) != null; ) {
@@ -105,17 +115,28 @@ final class SubFetch {
                 x = x.lastIndexOf('.') < 0 ? "" : x.substring(x.lastIndexOf('.') + 1).toLowerCase(Locale.ROOT);
                 int rank = x.equals("srt") ? 1 : x.equals("ass") || x.equals("ssa") ? 2 : x.equals("vtt") ? 3 : 0;
                 if (e.isDirectory() || rank == 0 || d.length == 0) continue;
-                if (best == null || rank < bestRank || rank == bestRank && d.length > best.length) {
+                subtitles++;
+                String base = name.substring(Math.max(name.lastIndexOf('/'), name.lastIndexOf('\\')) + 1);
+                boolean fits = ep != null && ep.matcher(base).find();
+                if (best == null || fits && !bestFits || fits == bestFits && (rank < bestRank || rank == bestRank && d.length > best.length)) {
                     best = d;
                     bestRank = rank;
                     bestExt = x;
+                    bestFits = fits;
                 }
             }
         } catch (IllegalArgumentException e) {
             throw new IOException("bad zip: " + e.getMessage()); // a name flagged UTF-8 that is not
         }
         if (best == null) throw new IOException("no subtitle in zip");
+        if (ep != null && subtitles > 1 && !bestFits) throw new IOException("episode " + episode + " is not in this zip");
         return new Object[]{best, bestExt};
+    }
+
+    /** A file or release name of this episode: S01E02, 1x02, E02 / Ep 2 / Episode 02, or a name that starts with the number ("02 Pilot.srt"). */
+    static java.util.regex.Pattern episodeName(int season, int episode) {
+        return java.util.regex.Pattern.compile("(?i)s0*" + season + "[ ._-]*e0*" + episode + "(?!\\d)|(?<!\\d)" + season + "x0*" + episode
+            + "(?!\\d)|(?:^|[ ._(\\[-])e(?:p(?:isode)?)?[ ._-]*0*" + episode + "(?!\\d)|^0*" + episode + "(?!\\d)[ ._-]");
     }
 
     /** BOM wins, then strict UTF-8, then the server's encoding hint, then the usual code page of the language. */
@@ -195,7 +216,8 @@ final class SubFetch {
             case "chi": case "zho": case "zhe": n = "GB18030"; break;
             case "zht": n = "Big5"; break;
             case "jpn": n = "Shift_JIS"; break;
-            case "sin": n = "UTF-8"; break;   // Sinhala files come as UTF-8 (the BOM is stripped in fetch)
+            // Sinhala and Indian scripts have no legacy code page in use: their files come as UTF-8 (the BOM is stripped in fetch)
+            case "sin": case "hin": case "ben": case "tam": case "tel": case "mal": case "kan": case "mar": case "guj": case "pan": n = "UTF-8"; break;
             default: n = "windows-1252";
         }
         Charset c = charset(n);

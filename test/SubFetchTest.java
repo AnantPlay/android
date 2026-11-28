@@ -247,7 +247,7 @@ public class SubFetchTest {
                 {"est", "windows-1257"}, {"lav", "windows-1257"}, {"lit", "windows-1257"}, {"vie", "windows-1258"},
                 {"kor", "EUC-KR"}, {"chi", "GB18030"}, {"zho", "GB18030"}, {"jpn", "Shift_JIS"},
                 {"fre", "windows-1252"}, {"pob", "windows-1252"}, {"eng", "windows-1252"}, {"", "windows-1252"}, {"ARA", "windows-1256"},
-                {"sin", "UTF-8"}, {"si", "UTF-8"}, {"SI-LK", "UTF-8"}};
+                {"sin", "UTF-8"}, {"si", "UTF-8"}, {"SI-LK", "UTF-8"}, {"gu", "UTF-8"}, {"pan", "UTF-8"}, {"hin", "UTF-8"}};
         for (String[] r : table) check("lang " + r[0], SubFetch.forLang(r[0]).name(), r[1]);
         check("lang tha", SubFetch.forLang("tha").name().endsWith("874"), true);
         check("code si", SubFetch.languageCode(" si "), "sin");
@@ -318,7 +318,57 @@ public class SubFetchTest {
         check("empty cache refetched", calls + "" + text(g).equals(WANT_AR), "2true");
         check("no temp files left", dir.list().length, 1);
 
+        // a season's zip: the episode's own file, never another one
+        byte[] pack = zip("Show.S01E01.srt", bytes(srt("one", "1", "\n"), "UTF-8"), "Show.S01E02.720p.srt", bytes(srt("two", "2", "\n"), "UTF-8"),
+            "Show.S01E12.srt", bytes(srt("twelve", "12", "\n") + "\n\n\n", "UTF-8"));
+        check("pack picks E02", text(SubFetch.fetch(serving(pack), "http://fake/pack", "", "eng", newDir(), 1, 2)).contains("two"), true);
+        check("pack picks E12", text(SubFetch.fetch(serving(pack), "http://fake/pack", "", "eng", newDir(), 1, 12)).contains("twelve"), true);
+        final File pd = newDir();
+        ioFails("pack without the episode", () -> SubFetch.fetch(serving(pack), "http://fake/pack", "", "eng", pd, 1, 5));
+        check("one file is the episode's", text(SubFetch.fetch(serving(zip("whatever.srt", bytes(srt("x", "y", "\n"), "UTF-8"))), "http://fake/one", "", "eng", newDir(), 1, 5)).contains("x"), true);
+        File same = newDir();
+        SubFetch.fetch(serving(pack), "http://fake/pack", "", "eng", same, 1, 1);
+        check("episodes of one zip cached apart", text(SubFetch.fetch(serving(pack), "http://fake/pack", "", "eng", same, 1, 2)).contains("two"), true);
+        check("1x02 and 02 names", SubFetch.episodeName(1, 2).matcher("show.1x02.srt").find() && SubFetch.episodeName(1, 2).matcher("02 Pilot.en.srt").find()
+            && !SubFetch.episodeName(1, 2).matcher("Show.S01E12.srt").find() && !SubFetch.episodeName(1, 2).matcher("Show.2008.S01E01.srt").find(), true);
+
         offlineSearch();
+        otherSources();
+    }
+
+    /** TheSubtitleDB, SubDL and Subsource answers, parsed without the network. */
+    static void otherSources() throws Exception {
+        check("iso2", SubOs.iso2("hin") + SubOs.iso2("guj") + SubOs.iso2("ger") + SubOs.iso2("pob") + SubOs.iso2("zht").isEmpty(), "higudepbtrue");
+        final List<String> asked = new ArrayList<>();
+        SubOs.Http tsdb = url -> {
+            asked.add(url);
+            return new java.io.ByteArrayInputStream(("{\"subtitles\":{\"items\":[{\"language\":\"hi\",\"format\":\"srt\",\"release_name\":\"AI.one\",\"ai\":\"translated\","
+                + "\"download_url\":\"https://api.thesubtitledb.org/get/2\"},{\"language\":\"hi\",\"format\":\"sub\",\"release_name\":\"MicroDVD\",\"ai\":null,"
+                + "\"download_url\":\"https://api.thesubtitledb.org/get/3\"},{\"language\":\"hi\",\"format\":\"srt\",\"release_name\":\"Human\",\"ai\":null,"
+                + "\"hearing_impaired\":true,\"download_url\":\"https://api.thesubtitledb.org/get/1\"}]}}").getBytes(StandardCharsets.UTF_8));
+        };
+        List<SubOs.Result> t = SubOs.theSubtitleDb(tsdb, "tt0903747", 1, 2, "hin");
+        check("tsdb episode url", asked.get(0), "https://api.thesubtitledb.org/v1/by-imdb/tt0903747/season/1/episode/2?lang=hi&limit=50");
+        check("tsdb human first, .sub dropped", t.size() + " " + t.get(0).release + " " + t.get(0).hearingImpaired + " " + t.get(1).ai + " " + t.get(1).source, "2 Human true true TheSubtitleDB");
+        SubOs.Http subdl = url -> new java.io.ByteArrayInputStream(("{\"status\":true,\"subtitles\":[{\"release_name\":\"Pack\",\"language\":\"EN\",\"url\":\"/subtitle/1.zip\",\"episode\":null},"
+            + "{\"release_name\":\"E3\",\"language\":\"EN\",\"url\":\"/subtitle/3.zip\",\"episode\":3},{\"release_name\":\"E2\",\"language\":\"EN\",\"url\":\"/subtitle/2.zip\",\"episode\":2},"
+            + "{\"release_name\":\"French\",\"language\":\"FR\",\"url\":\"/subtitle/4.zip\"}]}").getBytes(StandardCharsets.UTF_8));
+        List<SubOs.Result> d = SubOs.subdl(subdl, "subdl_key123", "tt0903747", 1, 2, "eng");
+        check("subdl pack and E2 only", d.size() + " " + d.get(0).url + " " + d.get(1).release, "2 https://dl.subdl.com/subtitle/1.zip E2");
+        SubOs.Http refused = url -> new java.io.ByteArrayInputStream("{\"status\":false,\"error\":\"Invalid API key\"}".getBytes(StandardCharsets.UTF_8));
+        ioFails("subdl bad key says so", () -> SubOs.subdl(refused, "subdl_key123", "tt0903747", 0, 0, "eng"));
+        final List<String> ss = new ArrayList<>();
+        SubOs.Http subsource = url -> {
+            ss.add(url);
+            String body = url.contains("movies/search") ? "{\"success\":true,\"data\":[{\"movieId\":10,\"type\":\"tvseries\",\"season\":2},{\"movieId\":11,\"type\":\"tvseries\",\"season\":1}]}"
+                : "{\"success\":true,\"data\":[{\"subtitleId\":5,\"releaseInfo\":[\"Show.S01E03.720p\"],\"files\":1},{\"subtitleId\":6,\"releaseInfo\":[\"Show.S01.Complete\"],\"files\":10},"
+                + "{\"subtitleId\":7,\"releaseInfo\":[\"Show.S01.WEB\",\"Show.S01E02.WEB\"],\"files\":1,\"hearingImpaired\":true},{\"subtitleId\":8,\"releaseInfo\":[\"Show.WEB\"],\"files\":1}]}";
+            return new java.io.ByteArrayInputStream(body.getBytes(StandardCharsets.UTF_8));
+        };
+        List<SubOs.Result> u = SubOs.subsource(subsource, "sskey1234", "tt0903747", 1, 2, "hin");
+        check("subsource season list", ss.get(1).contains("movieId=11&language=hindi"), true);
+        check("subsource pack and E2", u.size() + " " + u.get(0).url.replaceAll("\\?.*", "") + " " + u.get(1).release + " " + u.get(1).hearingImpaired,
+            "2 https://api.subsource.net/api/v1/subtitles/6/download Show.S01E02.WEB true");
     }
 
     // ---- SubOs without the network --------------------------------------------------------------------------------------

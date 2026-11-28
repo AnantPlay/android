@@ -121,4 +121,8 @@
     <string name="player_channels">Canales</string>
     <string name="player_more_watch">Más para ver</string>
     <string name="player_auto_up_to">Automático · hasta %1$s</string>
+    <string name="player_subs_sync">Sincronizar con el audio</string>
+    <string name="player_subs_listening">Escuchando el diálogo para ajustar los subtítulos…</string>
+    <string name="player_subs_no_sound">No se oye el sonido de este vídeo para sincronizar (va directo a la TV o al altavoz). Usa Sincronización en Subtítulos, Configuración</string>
+    <string name="player_subs_sync_failed">No se pudieron ajustar los subtítulos a la voz. Usa Sincronización en Subtítulos, Configuración</string>
 </resources>

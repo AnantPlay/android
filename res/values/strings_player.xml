@@ -125,4 +125,8 @@
     <string name="player_channels">Channels</string>
     <string name="player_more_watch">More to watch</string>
     <string name="player_auto_up_to">Auto · up to %1$s</string>
+    <string name="player_subs_sync">Sync to audio</string>
+    <string name="player_subs_listening">Listening to the dialogue to line the subtitles up…</string>
+    <string name="player_subs_no_sound">Can\'t hear this video\'s sound to sync (it goes straight to the TV or speaker). Use Timing in Subtitles, Settings</string>
+    <string name="player_subs_sync_failed">Could not line the subtitles up with the speech. Use Timing in Subtitles, Settings</string>
 </resources>

@@ -244,4 +244,9 @@
     <string name="home_documentaries">Documentaries</string>
     <string name="home_swipe_controls">Swipe for brightness and volume</string>
     <string name="home_swipe_controls_help">Swipe up or down on the left of the picture for brightness, on the right for volume</string>
+    <string name="subs_subdl">SubDL key</string>
+    <string name="subs_subdl_help">Your own free key from subdl.com (Account, API): SubDL\'s subtitles join the search. Empty = off.</string>
+    <string name="subs_subsource">Subsource key</string>
+    <string name="subs_subsource_help">Your own free key from subsource.net (Dashboard, API): Subsource\'s subtitles join the search. Empty = off.</string>
+    <string name="subs_key_added">Added</string>
 </resources>

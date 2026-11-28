@@ -237,4 +237,9 @@
     <string name="home_documentaries">وثائقيات</string>
     <string name="home_swipe_controls">السحب للسطوع ومستوى الصوت</string>
     <string name="home_swipe_controls_help">اسحب لأعلى أو لأسفل على يسار الصورة للسطوع، وعلى يمينها لمستوى الصوت</string>
+    <string name="subs_subdl">مفتاح SubDL</string>
+    <string name="subs_subdl_help">مفتاحك المجاني من subdl.com (Account، API): تنضم ترجمات SubDL إلى البحث. فارغ = إيقاف.</string>
+    <string name="subs_subsource">مفتاح Subsource</string>
+    <string name="subs_subsource_help">مفتاحك المجاني من subsource.net (Dashboard، API): تنضم ترجمات Subsource إلى البحث. فارغ = إيقاف.</string>
+    <string name="subs_key_added">مُضاف</string>
 </resources>

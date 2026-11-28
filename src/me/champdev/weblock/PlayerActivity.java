@@ -98,7 +98,7 @@ public class PlayerActivity extends Activity {
     TextView tip;               // the name of the button the remote is on (icons only otherwise)
     View tipFor;                // the button the label above is showing the name of
     final SpeechMeter meter = new SpeechMeter();   // how loud the dialogue is, every 0.1 s (subtitle auto-sync)
-    List<long[]> syncCues;      // the downloaded subtitle file's lines, to line up with the speech
+    List<long[]> syncCues;      // the shown subtitle file's lines (as the file times them), to line up with the speech
     int syncTries;
     long syncSet;               // the timing auto-sync last set (a different one means you set it yourself: then it stops)
     List<Skips.Part> skips = new ArrayList<>();
@@ -1113,6 +1113,8 @@ public class PlayerActivity extends Activity {
                 if (k.equalsIgnoreCase("User-Agent")) ua = h.getString(k); else headers.put(k, h.getString(k));
             }
         } catch (Exception ignored) { }
+        streamUa = ua;
+        streamHeaders = headers;
         DefaultHttpDataSource.Factory http = new DefaultHttpDataSource.Factory().setUserAgent(ua).setAllowCrossProtocolRedirects(true)
             .setConnectTimeoutMs(15000).setReadTimeoutMs(30000).setDefaultRequestProperties(headers);
         // The WebView's cookie for each request's own host, never one site's session sent to another
@@ -1665,10 +1667,13 @@ public class PlayerActivity extends Activity {
         if (!search && (labels.isEmpty() || (canOff && labels.size() == 1))) { say(App.t(type == C.TRACK_TYPE_TEXT ? R.string.player_no_subs : R.string.player_no_audio)); return; }
         int searchAt = search ? labels.size() : -1;
         if (search) labels.add(App.t(R.string.player_search_subs));
+        int syncAt = type == C.TRACK_TYPE_TEXT && syncCues != null ? labels.size() : -1;
+        if (syncAt >= 0) labels.add(App.t(R.string.player_subs_sync));
         int positionAt = type == C.TRACK_TYPE_TEXT ? labels.size() : -1;
         if (positionAt >= 0) labels.add(App.t(R.string.home_tab_settings));   // size, position, color, background, timing
         sheet(name, labels.toArray(new String[0]), (d, i) -> {
             if (i == searchAt) { searchSubs(); return; }
+            if (i == syncAt) { syncNow(); return; }
             if (i == positionAt) { subtitleStyle(); return; }
             // Off keeps a file or track picked before from coming back; a track of the stream replaces a file; either way the next resume does the same
             if (type == C.TRACK_TYPE_TEXT) subtitleRequest++;
@@ -1679,6 +1684,7 @@ public class PlayerActivity extends Activity {
             androidx.media3.common.TrackSelectionParameters.Builder b = player.getTrackSelectionParameters().buildUpon().clearOverridesOfType(type);
             if (picks.get(i) == null) b.setTrackTypeDisabled(type, true); else b.setTrackTypeDisabled(type, false).addOverride(picks.get(i));
             player.setTrackSelectionParameters(b.build());
+            if (type == C.TRACK_TYPE_TEXT) syncFor(picks.get(i) == null ? null : picks.get(i).mediaTrackGroup.getFormat(picks.get(i).trackIndices.get(0)));
             // A language picked for the audio becomes the one every next video starts in, when it has it
             if (type == C.TRACK_TYPE_AUDIO && picks.get(i) != null) {
                 String lang = picks.get(i).mediaTrackGroup.getFormat(picks.get(i).trackIndices.get(0)).language;
@@ -2191,7 +2197,7 @@ public class PlayerActivity extends Activity {
     void pickRelease(String lang, List<Subs.Sub> found) {
         List<Subs.Sub> files = found.subList(0, Math.min(60, found.size()));
         List<String> names = new ArrayList<>();
-        for (Subs.Sub f : files) names.add(f.release + (f.hearingImpaired ? "  \u00B7  CC" : "") + (f.source.equals("OpenSubtitles") ? "" : "  \u00B7  " + f.source));
+        for (Subs.Sub f : files) names.add(f.release + (f.hearingImpaired ? "  \u00B7  CC" : "") + (f.ai ? "  \u00B7  AI" : "") + (f.source.equals("OpenSubtitles") ? "" : "  \u00B7  " + f.source));
         sheet(App.t(R.string.player_pick_release, Subs.language(lang)), names.toArray(new String[0]), (d, j) -> {
                 for (String k : subKeys(false)) { Subs.remember(k, files.get(j)); Subs.rememberTrack(k, null, "", 0); }   // the file replaces a track picked before
                 addSubtitle(files.get(j));
@@ -2234,6 +2240,7 @@ public class PlayerActivity extends Activity {
         player.setTrackSelectionParameters(player.getTrackSelectionParameters().buildUpon().setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
             .clearOverridesOfType(C.TRACK_TYPE_TEXT).addOverride(new TrackSelectionOverride(best.getMediaTrackGroup(), bestT)).build());
         say(App.t(R.string.player_subs_lang, labelOf(best.getTrackFormat(bestT), R.string.player_subs_n, n)));
+        syncFor(best.getTrackFormat(bestT));
         return true;
     }
 
@@ -2377,8 +2384,17 @@ public class PlayerActivity extends Activity {
     void showSubtitle(Subs.Sub sub, SubFetch.Fetched f) {
         String mime = f.ext.equals("vtt") ? MimeTypes.TEXT_VTT : f.ext.equals("srt") ? MimeTypes.APPLICATION_SUBRIP : MimeTypes.TEXT_SSA;
         subList.removeIf(c -> "opensubtitles".equals(c.id));
-        subList.add(new MediaItem.SubtitleConfiguration.Builder(Uri.fromFile(f.file)).setId("opensubtitles").setMimeType(mime)
-            .setLanguage(sub.lang).setLabel(Subs.language(sub.lang) + " (" + sub.source + ")").setSelectionFlags(C.SELECTION_FLAG_DEFAULT).build());
+        MediaItem.SubtitleConfiguration conf = new MediaItem.SubtitleConfiguration.Builder(Uri.fromFile(f.file)).setId("opensubtitles").setMimeType(mime)
+            .setLanguage(sub.lang).setLabel(Subs.language(sub.lang) + " (" + sub.source + ")").setSelectionFlags(C.SELECTION_FLAG_DEFAULT).build();
+        for (int i = 0; i < subList.size(); i++) subList.set(i, subList.get(i).buildUpon().setSelectionFlags(0).build());   // this one comes on
+        subList.add(conf);
+        reloadSubtitles();
+        say(App.t(R.string.player_subs_lang, Subs.language(sub.lang)));
+        startSync(conf);
+    }
+
+    /** Puts the subtitle list in the stream and restarts it at the same spot; the file marked default comes on. */
+    void reloadSubtitles() {
         mediaItem.setSubtitleConfigurations(subList);
         long pos = player.getCurrentPosition();
         boolean playing = player.getPlayWhenReady();
@@ -2386,42 +2402,162 @@ public class PlayerActivity extends Activity {
         player.setMediaItem(mediaItem.build(), pos);
         player.prepare();
         player.setPlayWhenReady(playing);
-        say(App.t(R.string.player_subs_lang, Subs.language(sub.lang)));
-        // Auto-sync: once enough has played, line the file up with the speech (a release with a recap is often minutes off)
-        syncCues = null;
-        syncTries = 0;
-        syncSet = Subs.delayMs;
-        App.io.execute(() -> {
-            try {
-                List<long[]> cues = SubSync.cues(f.file);
-                runOnUiThread(() -> syncCues = cues);
-            } catch (java.io.IOException ignored) { }
-        });
-        App.main.removeCallbacks(syncCheck);
-        App.main.postDelayed(syncCheck, 45000);
     }
 
-    /** Every 45 s (8 times at most) until the file is lined up with the speech, unless you set the timing yourself. */
+    // ---- Auto-sync: the subtitle file shown (ours or the page's) is lined up with the speech; a release with a recap is minutes off, a 25 fps one drifts ----
+
+    MediaItem.SubtitleConfiguration syncConf;   // the file being lined up
+    String syncText;                             // its text as it came, for a copy stretched to another frame rate
+    double syncRate = 1;                         // the frame rate fix shown now (1 = none)
+    boolean syncFixed, syncLoud;                 // lined up once; you asked (Sync to audio): say what happens, also when it can't
+
+    /** The subtitle track picked (null = Off): a file, ours or the page's, gets lined up with the speech; the stream's own track stops it. */
+    void syncFor(androidx.media3.common.Format f) {
+        MediaItem.SubtitleConfiguration on = null;
+        for (MediaItem.SubtitleConfiguration c : subList) if (f != null && c.label != null && c.label.equals(f.label)) on = c;
+        if (on == null) { syncConf = null; syncCues = null; App.main.removeCallbacks(syncCheck); }
+        else if (on != syncConf) startSync(on);
+    }
+
+    void startSync(MediaItem.SubtitleConfiguration conf) {
+        syncConf = conf;
+        syncCues = null;
+        syncRate = 1;
+        syncTries = 0;
+        syncFixed = false;
+        syncSeen = null;
+        syncSet = Subs.delayMs;
+        App.main.removeCallbacks(syncCheck);
+        App.io.execute(() -> {
+            try {
+                String text = subtitleText(conf.uri);
+                List<long[]> cues = SubSync.cues(text);
+                runOnUiThread(() -> {
+                    if (syncConf != conf || cues.isEmpty()) return;
+                    syncText = text;
+                    syncCues = cues;
+                    App.main.postDelayed(syncCheck, syncLoud ? 0 : 20000);
+                });
+            } catch (java.io.IOException e) {
+                Log.w("SubSync", "can't read " + conf.uri + ": " + e.getMessage());
+            }
+        });
+    }
+
+    Map<String, String> streamHeaders = new HashMap<>();
+    String streamUa = "";
+
+    /** A subtitle file's text: a local one, or the page's, asked for the way the player asks (its headers and the site's cookie). Off the main thread. */
+    String subtitleText(Uri uri) throws java.io.IOException {
+        if ("file".equals(uri.getScheme())) return new String(java.nio.file.Files.readAllBytes(new java.io.File(uri.getPath()).toPath()), java.nio.charset.StandardCharsets.UTF_8);
+        java.net.HttpURLConnection c = Warp.open(uri.toString());
+        try {
+            c.setRequestProperty("User-Agent", streamUa);
+            for (Map.Entry<String, String> h : streamHeaders.entrySet()) c.setRequestProperty(h.getKey(), h.getValue());
+            String cookie = CookieManager.getInstance().getCookie(uri.toString());
+            if (cookie != null && !cookie.isEmpty()) c.setRequestProperty("Cookie", cookie);
+            try (java.io.InputStream in = c.getInputStream()) {
+                return new String(SubOs.read(in, SubFetch.MAX, "subtitle"), java.nio.charset.StandardCharsets.UTF_8);
+            }
+        } finally {
+            c.disconnect();
+        }
+    }
+
+    /** Sync to audio (subtitle menu): line the file up now, and say how it went; also after you set the timing yourself. */
+    void syncNow() {
+        syncSet = Subs.delayMs;
+        syncLoud = true;
+        syncTries = 0;
+        syncSeen = null;
+        say(App.t(R.string.player_subs_listening));
+        App.main.removeCallbacks(syncCheck);
+        App.main.post(syncCheck);
+    }
+
+    /** Every 20 s until the lines fit the speech (twice running), then every 2 minutes to follow it (the frame rate shows over a longer stretch). Never once you set the timing yourself. */
     final Runnable syncCheck = new Runnable() {
         @Override public void run() {
-            if (player == null || isFinishing() || syncCues == null || Subs.delayMs != syncSet || syncTries++ >= 8) return;
+            if (player == null || isFinishing() || syncCues == null || Subs.delayMs != syncSet) return;
             float[] level = meter.snapshot();
+            // only the stretch around where you are: a print with a cut or a slow drift has another offset an hour later
+            int at = (int) (player.getCurrentPosition() / SubSync.BIN_MS);
+            for (int i = 0; i < level.length; i++) if (i < at - 6000 || i > at + 300) level[i] = -1;
             List<long[]> cues = syncCues;
+            MediaItem.SubtitleConfiguration conf = syncConf;
+            int tries = ++syncTries;
             App.io.execute(() -> {
-                Long d = SubSync.offset(level, cues);
-                Log.i("SubSync", "try " + syncTries + ": " + (d == null ? "not sure yet" : d + " ms"));
-                runOnUiThread(() -> {
-                    if (player == null || isFinishing() || Subs.delayMs != syncSet) return;
-                    if (d == null) { App.main.postDelayed(syncCheck, 45000); return; }
-                    if (Math.abs(d - Subs.delayMs) < 250) return;   // already in sync
-                    boolean jump = Math.abs(d - Subs.delayMs) > 5000;
-                    Subs.delayMs = syncSet = d;
-                    if (jump) player.seekTo(player.getCurrentPosition());   // the subtitle track picks up its new place
-                    say(App.t(R.string.player_subs_synced, Subs.delayLabel()));
-                });
+                int heard = 0;
+                for (float v : level) if (v >= 0) heard++;
+                SubSync.Fit fit = SubSync.fit(level, cues);
+                Log.i("SubSync", (heard / 10) + " s heard: " + (fit == null ? "not sure" : fit.offsetMs + " ms x" + fit.rate) + " | " + SubSync.why);
+                int seconds = heard / 10;
+                runOnUiThread(() -> { if (syncConf == conf && Subs.delayMs == syncSet && player != null && !isFinishing()) synced(fit, seconds, tries); });
             });
         }
     };
+
+    SubSync.Fit syncSeen;   // the last check's answer: a change is made only when the next check, with more heard, says the same
+
+    void synced(SubSync.Fit fit, int heard, int tries) {
+        boolean more = syncFixed || tries < 60;   // unsure: about 20 minutes of trying; lined up: it keeps following
+        if (fit == null) {
+            syncSeen = null;
+            if (heard == 0 && tries >= 3) { if (syncLoud) say(App.t(R.string.player_subs_no_sound)); syncLoud = false; return; }   // the sound goes past the app (straight to an amplifier)
+            if (!more) { if (syncLoud) say(App.t(R.string.player_subs_sync_failed)); syncLoud = false; return; }
+            App.main.postDelayed(syncCheck, 20000);
+            return;
+        }
+        boolean confirmed = syncSeen != null && syncSeen.rate == fit.rate && Math.abs(syncSeen.offsetMs - fit.offsetMs) <= 500;
+        syncSeen = fit;
+        if (!confirmed) { App.main.postDelayed(syncCheck, 15000); return; }
+        if (fit.rate != syncRate) stretchSubtitle(fit);
+        else if (Math.abs(fit.offsetMs - Subs.delayMs) >= (syncFixed ? 400 : 250)) {
+            boolean jump = Math.abs(fit.offsetMs - Subs.delayMs) > 5000;
+            Subs.delayMs = syncSet = fit.offsetMs;
+            if (jump) player.seekTo(player.getCurrentPosition());   // the subtitle track picks up its new place
+            say(App.t(R.string.player_subs_synced, syncLabel()));
+        } else if (syncLoud) say(App.t(R.string.player_subs_synced, syncLabel()));
+        syncFixed = true;
+        syncLoud = false;
+        syncSeen = null;
+        if (more) App.main.postDelayed(syncCheck, 120000);
+    }
+
+    /** "+1.2 s", plus "25→23.976 fps" when the file was made for another frame rate. */
+    String syncLabel() {
+        double[] fps = {23.976, 24, 25};
+        for (double a : fps) for (double b : fps) if (a != b && Math.abs(a / b - syncRate) < 1e-6)
+            return Subs.delayLabel() + " \u00B7 " + String.format(Locale.ROOT, "%s\u2192%s fps", a == 24 || a == 25 ? (int) a : a, b == 24 || b == 25 ? (int) b : b);
+        return Subs.delayLabel();
+    }
+
+    /** Shows a copy of the file with its times stretched to this frame rate, from the same spot. */
+    void stretchSubtitle(SubSync.Fit fit) {
+        MediaItem.SubtitleConfiguration conf = syncConf;
+        String text = syncText;
+        App.io.execute(() -> {
+            try {
+                java.io.File dir = new java.io.File(getCacheDir(), "subs");
+                dir.mkdirs();
+                String ext = MimeTypes.TEXT_VTT.equals(conf.mimeType) ? "vtt" : MimeTypes.APPLICATION_SUBRIP.equals(conf.mimeType) ? "srt" : "ass";
+                java.io.File out = new java.io.File(dir, SubFetch.sha1(conf.uri + "@" + fit.rate) + "." + ext);
+                java.nio.file.Files.write(out.toPath(), SubSync.rescale(text, fit.rate).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                runOnUiThread(() -> {
+                    if (syncConf != conf || player == null || isFinishing()) return;
+                    MediaItem.SubtitleConfiguration copy = conf.buildUpon().setUri(Uri.fromFile(out)).setSelectionFlags(C.SELECTION_FLAG_DEFAULT).build();
+                    for (int i = 0; i < subList.size(); i++) subList.set(i, subList.get(i) == conf ? copy : subList.get(i).buildUpon().setSelectionFlags(0).build());
+                    syncConf = copy;
+                    syncRate = fit.rate;
+                    Subs.delayMs = syncSet = fit.offsetMs;
+                    reloadSubtitles();
+                    say(App.t(R.string.player_subs_synced, syncLabel()));
+                });
+            } catch (java.io.IOException e) {
+                Log.w("SubSync", "stretch: " + e.getMessage());
+            }
+        });
+    }
 
     // ---- Picture in picture (phone): Home while a video plays keeps it playing in a small window ----
 

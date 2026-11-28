@@ -1901,6 +1901,13 @@ public class Home extends Activity {
             Subs.editAddonUrl(this, u -> { App.prefs.edit().putString("subAddonUrl", u).apply(); rebuild(); })));
         addonValue.setText(Subs.addonLabel());
         addonValue.setTextColor(Subs.addonUrl().isEmpty() ? MUTED : GREEN);
+        String[][] keys = {{"subdlKey", App.t(R.string.subs_subdl), App.t(R.string.subs_subdl_help)}, {"subsourceKey", App.t(R.string.subs_subsource), App.t(R.string.subs_subsource_help)}};
+        for (String[] k : keys) {
+            TextView keyValue = new TextView(this);
+            secBox.addView(settingRow(R.drawable.ic_p_subs, k[1], k[2], keyValue, v -> Subs.editKey(this, k[1], k[0], this::rebuild)));
+            keyValue.setText(App.t(Subs.key(k[0]).isEmpty() ? R.string.home_off : R.string.subs_key_added));
+            keyValue.setTextColor(Subs.key(k[0]).isEmpty() ? MUTED : GREEN);
+        }
         TextView autoSkip = new TextView(this);
         boolean skipOn = App.prefs.getBoolean("autoSkip", false);
         secBox.addView(settingRow(R.drawable.ic_p_next, App.t(R.string.home_auto_skip), App.t(R.string.home_auto_skip_help), autoSkip, v -> {

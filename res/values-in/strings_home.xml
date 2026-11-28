@@ -237,4 +237,9 @@
     <string name="home_documentaries">Dokumenter</string>
     <string name="home_swipe_controls">Geser untuk kecerahan dan volume</string>
     <string name="home_swipe_controls_help">Geser ke atas atau bawah di kiri gambar untuk kecerahan, di kanan untuk volume</string>
+    <string name="subs_subdl">Kunci SubDL</string>
+    <string name="subs_subdl_help">Kunci gratis milikmu dari subdl.com (Account, API): subtitle SubDL ikut dicari. Kosong = mati.</string>
+    <string name="subs_subsource">Kunci Subsource</string>
+    <string name="subs_subsource_help">Kunci gratis milikmu dari subsource.net (Dashboard, API): subtitle Subsource ikut dicari. Kosong = mati.</string>
+    <string name="subs_key_added">Ditambahkan</string>
 </resources>

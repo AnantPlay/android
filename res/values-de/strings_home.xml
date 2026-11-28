@@ -237,4 +237,9 @@
     <string name="home_documentaries">Dokus</string>
     <string name="home_swipe_controls">Wischen für Helligkeit und Lautstärke</string>
     <string name="home_swipe_controls_help">Links im Bild nach oben oder unten wischen für die Helligkeit, rechts für die Lautstärke</string>
+    <string name="subs_subdl">SubDL-Schlüssel</string>
+    <string name="subs_subdl_help">Dein eigener kostenloser Schlüssel von subdl.com (Account, API): Untertitel von SubDL kommen zur Suche dazu. Leer = aus.</string>
+    <string name="subs_subsource">Subsource-Schlüssel</string>
+    <string name="subs_subsource_help">Dein eigener kostenloser Schlüssel von subsource.net (Dashboard, API): Untertitel von Subsource kommen zur Suche dazu. Leer = aus.</string>
+    <string name="subs_key_added">Hinzugefügt</string>
 </resources>

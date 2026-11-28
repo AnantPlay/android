@@ -121,4 +121,8 @@
     <string name="player_channels">Saluran</string>
     <string name="player_more_watch">Tontonan lain</string>
     <string name="player_auto_up_to">Otomatis · hingga %1$s</string>
+    <string name="player_subs_sync">Sinkronkan dengan audio</string>
+    <string name="player_subs_listening">Mendengarkan dialog untuk menyesuaikan subtitle…</string>
+    <string name="player_subs_no_sound">Suara video ini tidak terdengar untuk sinkronisasi (langsung ke TV atau speaker). Gunakan Waktu di Subtitle, Setelan</string>
+    <string name="player_subs_sync_failed">Subtitle tidak bisa disesuaikan dengan ucapan. Gunakan Waktu di Subtitle, Setelan</string>
 </resources>
