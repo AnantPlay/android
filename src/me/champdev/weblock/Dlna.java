@@ -132,9 +132,9 @@ final class Dlna implements Cast.Tv {
         InputStream in = code >= 400 ? c.getErrorStream() : c.getInputStream();
         String r = in == null ? "" : read(in);
         c.disconnect();
-        if (code >= 400) {
-            String why = text(r, "errorDescription");
-            throw new IOException(action + " failed (" + code + (why != null ? ", " + why : "") + ")");
+        if (code >= 400) {   // the TV's own reason, as UPnP gives it: "714 Illegal MIME-type"
+            String num = text(r, "errorCode"), why = text(r, "errorDescription");
+            throw new IOException((num != null ? num : "HTTP " + code) + (why != null && !why.isEmpty() ? " " + why : ""));
         }
         return r;
     }
@@ -199,7 +199,7 @@ final class Dlna implements Cast.Tv {
             soap(avt, AVT, "Play", "<InstanceID>0</InstanceID><Speed>1</Speed>");
         } catch (IOException e) {
             close();
-            return App.t(R.string.cast_dlna_refused);
+            return App.t(R.string.cast_dlna_refused) + " (" + e.getMessage() + ")";   // with the TV's reason: what to put in a report
         }
         Chromecast.awake(true);
         long at = v.optLong("at");
