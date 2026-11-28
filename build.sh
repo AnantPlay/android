@@ -8,8 +8,8 @@ SDK=${ANDROID_HOME:-$HOME/Library/Android/sdk}
 BT=$(ls -d "$SDK"/build-tools/* | sort -V | tail -1)   # newest build-tools installed
 JAR=$SDK/platforms/android-34/android.jar
 LIBS=$(ls libs/*.jar | tr '\n' ':')
-VERSION_CODE=${VERSION_CODE:-22400}
-VERSION_NAME=${VERSION_NAME:-2.24.0}   # CI overrides both from the release tag
+VERSION_CODE=${VERSION_CODE:-22500}
+VERSION_NAME=${VERSION_NAME:-2.25.0}   # CI overrides both from the release tag
 VERSION="--version-code $VERSION_CODE --version-name $VERSION_NAME"
 cd "$(dirname "$0")"
 scripts/fetch-assets.sh   # ad blocklist (kept out of the repository)
