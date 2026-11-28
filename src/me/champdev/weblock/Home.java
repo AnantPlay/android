@@ -1700,14 +1700,16 @@ public class Home extends Activity {
         news.setText(App.t(R.string.home_whats_new));
         install.setText(App.t(R.string.home_install));
         install.setBackground(rounded(ACCENT, dp(22)));
+        java.util.function.Consumer<String> progress = status -> {
+            boolean failed = status.startsWith(App.t(R.string.update_failed, ""));
+            install.setText(failed ? App.t(R.string.home_install) : status);
+            install.setEnabled(failed);
+            if (failed) toast(status);
+        };
+        if (Update.installing) { install.setEnabled(false); Update.watch(progress); }   // rebuilt mid-download: this button carries on showing it
         install.setOnClickListener(v -> {
             install.setEnabled(false);
-            Update.install(status -> {
-                boolean failed = status.startsWith(App.t(R.string.update_failed, ""));
-                install.setText(failed ? App.t(R.string.home_install) : status);
-                install.setEnabled(failed);
-                if (failed) toast(status);
-            });
+            Update.install(progress);
         });
         TextView later = chip(v -> { Update.skip(version); build(); });
         later.setText(App.t(R.string.home_later));
@@ -1974,6 +1976,7 @@ public class Home extends Activity {
         secBox.addView(settingRow(R.drawable.ic_refresh, App.t(R.string.home_check_updates), App.t(R.string.home_check_updates_help, Update.installed()), updValue, v -> checkUpdate(updValue)));
         updValue.setText(newer.isEmpty() ? App.t(R.string.home_up_to_date) : App.t(R.string.home_version_available, newer));
         updValue.setTextColor(newer.isEmpty() ? MUTED : GREEN);
+        if (Update.installing) Update.watch(updValue::setText);
         TextView autoValue = new TextView(this);
         secBox.addView(settingRow(R.drawable.ic_p_restart, App.t(R.string.home_check_at_start), App.t(R.string.home_check_at_start_help), autoValue, v -> {
             App.prefs.edit().putBoolean("updateCheck", !Update.auto()).apply();

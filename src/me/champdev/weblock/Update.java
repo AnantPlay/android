@@ -139,13 +139,27 @@ final class Update {
         return n;
     }
 
+    static volatile boolean installing;   // a download (or the installer's question) is under way
+    static String state = "";        // what it said last
+    private static Consumer<String> watcher;
+
+    /** Where the progress shows: the newest screen's (a screen rebuilt mid-download takes it over and gets the last word at once). */
+    static void watch(Consumer<String> w) {
+        watcher = w;
+        if (w != null && installing) w.accept(state);
+    }
+
     /**
      * Downloads the APK straight into an install session and hands it to Android's installer, which asks the user to confirm.
-     * @param status told (on the main thread) how it goes: "Downloading 40%", "Installing", or why it failed
+     * @param status told (on the main thread) how it goes: "Downloading 40%", "Installing", or why it failed; a second press while one runs only watches it
      */
     static void install(Consumer<String> status) {
+        watch(status);
+        if (installing) return;
         String url = App.prefs.getString("updateUrl", "");
         if (url.isEmpty()) { status.accept(App.t(R.string.update_no_download)); return; }
+        installing = true;
+        state = App.t(R.string.update_downloading, 0);
         App.io.execute(() -> {
             Context app = App.app;
             PackageInstaller pi = app.getPackageManager().getPackageInstaller();
@@ -165,11 +179,11 @@ final class Update {
                         out.write(buf, 0, n);
                         done += n;
                         int pct = total > 0 ? (int) (done * 100 / total) : 0;
-                        if (pct != shown) { shown = pct; post(status, App.t(R.string.update_downloading, pct)); }
+                        if (pct != shown) { shown = pct; post(App.t(R.string.update_downloading, pct), false); }
                     }
                     session.fsync(out);
                 }
-                post(status, App.t(R.string.update_installing));
+                post(App.t(R.string.update_installing), false);
                 if (waiting != null) try { app.unregisterReceiver(waiting); } catch (IllegalArgumentException ignored) { }   // an earlier try that was abandoned
                 BroadcastReceiver r = waiting = new BroadcastReceiver() {
                     @Override public void onReceive(Context ctx, Intent i) {
@@ -179,7 +193,7 @@ final class Update {
                             return;
                         }
                         app.unregisterReceiver(this);
-                        if (st != PackageInstaller.STATUS_SUCCESS) post(status, App.t(R.string.update_failed, i.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE)));
+                        if (st != PackageInstaller.STATUS_SUCCESS) post(App.t(R.string.update_failed, i.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE)), true);
                     }
                 };
                 IntentFilter f = new IntentFilter("me.champdev.weblock.UPDATE");
@@ -188,14 +202,19 @@ final class Update {
                     PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= 31 ? PendingIntent.FLAG_MUTABLE : 0)).getIntentSender());
             } catch (Exception e) {
                 if (session != null) session.abandon();
-                post(status, App.t(R.string.update_failed, e.getMessage()));
+                post(App.t(R.string.update_failed, e.getMessage()), true);
             } finally {
                 if (session != null) session.close();
             }
         });
     }
 
-    private static void post(Consumer<String> status, String s) {
-        App.main.post(() -> status.accept(s));
+    private static void post(String s, boolean over) {
+        App.main.post(() -> {
+            state = s;
+            if (over) installing = false;
+            Consumer<String> w = watcher;
+            if (w != null) w.accept(s);
+        });
     }
 }
