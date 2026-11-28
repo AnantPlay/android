@@ -185,7 +185,7 @@ final class Catalog {
     /** A genre chip that is a language list: LANG + the addon's language name ("lang:Hindi"). */
     static final String LANG = "lang:";
     // ponytail: language stands in for country (Spain also gets Mexican films); a per-country list needs a TMDB key
-    static final String[] LOCAL = {"IN=Hindi,Tamil,Telugu,Malayalam,Kannada,Bengali,Marathi,Punjabi", "PK=Urdu,Punjabi", "BD=Bengali", "LK=Sinhalese,Tamil",
+    static final String[] LOCAL = {"IN=Hindi,Tamil,Telugu,Malayalam,Kannada,Bengali,Marathi,Punjabi,Gujarati", "PK=Urdu,Punjabi", "BD=Bengali", "LK=Sinhalese,Tamil",
         "NP=Nepali,Hindi", "JP=Japanese", "KR=Korean", "CN=Mandarin", "TW=Mandarin", "HK=Mandarin", "SG=Mandarin,Malay,Tamil", "TH=Thai", "VN=Vietnamese",
         "ID=Indonesian", "MY=Malay,Mandarin,Tamil", "PH=Tagalog", "TR=Turkish", "IR=Persian", "IL=Hebrew", "SA=Arabic", "AE=Arabic", "EG=Arabic", "MA=Arabic,French",
         "DZ=Arabic,French", "TN=Arabic,French", "IQ=Arabic,Kurdish", "JO=Arabic", "KW=Arabic", "QA=Arabic", "LB=Arabic", "SY=Arabic", "RU=Russian", "UA=Ukrainian",
@@ -203,11 +203,27 @@ final class Catalog {
         return new String[0];
     }
 
+    /** Our language names the addon spells its own way; "" = a language it doesn't have (the scraper's file then has the full list). */
+    static final java.util.Map<String, String> ADDON_NAMES = new java.util.HashMap<>();
+    static {
+        ADDON_NAMES.put("Sinhalese", "Sinhala");
+        ADDON_NAMES.put("Mandarin", "Chinese");
+        ADDON_NAMES.put("Dutch", "Dutch; Flemish");
+        ADDON_NAMES.put("Catalan", "Catalan; Valencian");
+        ADDON_NAMES.put("Gujarati", "");
+    }
+
     /** One page of a language's most popular titles. `rest` = "Hindi" or "Hindi&skip=20". Null when it can't be reached. */
     static List<Title> language(String type, String rest, boolean diskOnly) {
         try {
             String[] parts = rest.split("&", 2);
-            String path = TMDB + "/catalog/" + type + "/tmdb.language/genre=" + java.net.URLEncoder.encode(parts[0], "UTF-8").replace("+", "%20")
+            String name = ADDON_NAMES.getOrDefault(parts[0], parts[0]);
+            if (name.isEmpty()) {   // an unknown name gets the addon's default list (Iron Man under "Gujarati"): page the scraper's own
+                List<Title> all = rank(type, "all:" + parts[0], diskOnly);
+                int skip = parts.length > 1 && parts[1].matches("skip=\\d+") ? Integer.parseInt(parts[1].substring(5)) : 0;
+                return all == null ? null : new ArrayList<>(all.subList(Math.min(skip, all.size()), Math.min(skip + 20, all.size())));
+            }
+            String path = TMDB + "/catalog/" + type + "/tmdb.language/genre=" + java.net.URLEncoder.encode(name, "UTF-8").replace("+", "%20")
                 + (parts.length > 1 ? "&" + parts[1] : "") + ".json";
             String text = diskOnly ? disk(path) : get(path, true);
             if (text == null) return null;
